@@ -105,6 +105,8 @@ h2.t{font-size:1.4rem;margin:26px 0 8px}
 .shk .pd{animation:shk .4s}
 .set .ghost{margin:0 6px 8px 0}
 #auth{position:fixed;inset:0;z-index:45;background:var(--bg);overflow:auto;display:flex;align-items:center;justify-content:center;padding:24px}
+.pillb{margin-top:8px;border:0;background:#fff;color:#24103F;font:600 .85rem var(--bd);padding:8px 12px;border-radius:99px;cursor:pointer}
+textarea.inp{resize:vertical;line-height:1.5}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -141,6 +143,9 @@ h2.t{font-size:1.4rem;margin:26px 0 8px}
   <h3>Flux</h3><div class="chips" id="cf"></div>
   <h3>Symptômes</h3><div class="chips" id="cs"></div>
   <h3>Humeur</h3><div class="chips" id="cm"></div>
+  <div class="card alert" id="lateBox" hidden><h3>Tes règles sont en retard</h3><p id="lateTxt" style="margin:6px 0 12px;color:var(--muted)"></p><h3>Test de grossesse</h3><div class="chips" id="ct" style="margin-bottom:0"></div></div>
+  <h3>Note du jour</h3>
+  <textarea class="inp" id="nt" rows="4" maxlength="600" placeholder="Écris ici ce que tu ressens, tes questions, ce que tu as remarqué…"></textarea>
 </section>
 
 <section id="stats" hidden>
@@ -232,7 +237,7 @@ function hero(m){
   if(day<=m.p)ph='Règles';else if(day<m.c-18)ph='Phase folliculaire';else if(day===m.c-13)ph='Jour d’ovulation';else if(day<=m.c-12)ph='Fenêtre fertile';else ph='Phase lutéale';
   if(day>m.c+3&&late>0)ph='Pense à renseigner tes règles';
   var right;
-  if(late>0)right='<strong>Règles attendues depuis '+late+' jour'+(late>1?'s':'')+'</strong>'+fmt(ns);
+  if(late>0)right='<strong>Règles attendues depuis '+late+' jour'+(late>1?'s':'')+'</strong>'+fmt(ns)+'<br><button class="pillb" id="lt">Écrire mon retard</button>';
   else{var n=-late;right='<strong>Règles dans '+n+' jour'+(n>1?'s':'')+'</strong>'+fmt(ns)}
   var ovLine='';if(diff(ov,today)>=0)ovLine='<br>Ovulation : '+fmt(ov);if(m.mg)ovLine+='<br>Marge de ± '+m.mg+' j';
   var fz=(ph==='Fenêtre fertile'||ph==='Jour d’ovulation');
@@ -300,11 +305,23 @@ var SY=['Crampes','Maux de tête','Ballonnements','Fatigue','Seins sensibles','A
 function mood(v){var r=MO.filter(function(x){return x[0]===v})[0];return r?r[1]:v}
 function phaseAt(m,dt){if(!m.last)return null;var d=diff(dt,m.last)+1;if(d<1)return null;d=(d-1)%m.c+1;if(d<=m.p)return 'r';if(d<m.c-18)return 'f';if(d<=m.c-12)return 'o';return 'l'}
 function chips(a,cur,t){return a.map(function(x){var ar=Array.isArray(x),v=ar?x[0]:x,l=ar?x[1]:x,on=Array.isArray(cur)?cur.indexOf(v)>=0:cur===v;return `<button class="chip" data-t="${t}" data-v="${v}" aria-pressed="${on}">${l}</button>`}).join('')}
+var TS=[['none','Pas fait'],['neg','Négatif'],['pos','Positif']];
+function lateDays(m,dt){if(!m.last)return 0;var n=diff(dt,add(m.last,m.c+m.sh));return(n>0&&n<=60&&diff(dt,m.last)>0)?n:0}
+function lastTest(){for(var i=0;i<=30;i++){var e=S.log[key(add(today,-i))];if(e&&e.t)return e.t}return ''}
+$('hero').addEventListener('click',function(e){if(e.target.closest('#lt')){$('dd').value=key(today);tab(3)}});
+$('nt').addEventListener('input',function(){var k=$('dd').value||key(today),en=S.log[k]||(S.log[k]={s:[],m:'',f:''});en.n=this.value.slice(0,600);save()});
 function dayView(){
  var k=$('dd').value||key(today),e=S.log[k]||{s:[],m:'',f:''},m=model(),ph=phaseAt(m,parse(k));
  $('dtitle').textContent=(S.name?'Bonjour '+S.name+' · ':'')+fmt(parse(k));
  $('adv').innerHTML=ph?`<h3>${ADV[ph][0]}</h3><p style="margin:6px 0 0">${ADV[ph][1]}</p>`:'<p style="margin:0">Renseigne tes dernières règles pour voir des conseils adaptés à ta phase.</p>';
  $('cf').innerHTML=chips(FL,e.f,'f');$('cs').innerHTML=chips(SY,e.s,'s');$('cm').innerHTML=chips(MO,e.m,'m');
+ var late=lateDays(m,parse(k));$('lateBox').hidden=!(late>0);
+ if(late>0){var tx='Retard de <b>'+late+' jour'+(late>1?'s':'')+'</b> par rapport à la date prévue. Un retard peut avoir plusieurs causes : stress, changement de rythme, sport intense, voyage, maladie ou grossesse. Si une grossesse est possible, un test est généralement fiable à partir du jour du retard (de préférence le matin).';
+  if(e.t==='pos')tx+=' Test positif : prends rendez-vous avec un médecin ou une sage-femme pour confirmer et être suivie.';
+  if(e.t==='neg')tx+=' Si tes règles ne viennent pas, refais un test dans quelques jours : un test fait trop tôt peut être négatif à tort.';
+  tx+=' En cas de doute ou si le retard se prolonge, parles-en à un professionnel de santé.';
+  $('lateTxt').innerHTML=tx;$('ct').innerHTML=chips(TS,e.t||'','t')}
+ $('nt').value=e.n||'';
 }
 $('day').addEventListener('click',function(e){
  var b=e.target.closest('.chip');if(!b)return;
@@ -363,6 +380,7 @@ $('pdf').onclick=function(){
  var m=model(),cl=cycles(m),L=['Rapport de suivi du cycle','Généré le '+fmt(today)+(S.name?' - '+S.name:''),'','Cycle moyen : '+m.c+' jours','Durée moyenne des règles : '+m.p+' jours','Cycles suivis : '+cl.length+(cl.length?' ('+cl.slice(-6).join(', ')+' jours)':''),'','Premiers jours des dernières règles :'];
  if(!m.starts.length)L.push('  (aucun renseigné)');
  m.starts.slice(-8).forEach(function(d){L.push('  - '+fmt(d))});
+ var lt=lateDays(m,today);if(lt>0){L.push('','Retard de règles actuel : '+lt+' jour'+(lt>1?'s':''));var tt=lastTest();if(tt)L.push('Dernier test de grossesse noté : '+({none:'pas fait',neg:'négatif',pos:'positif'})[tt])}
  L.push('','Symptômes fréquents :');var sy=tally(function(e){return e.s||[]});
  if(!sy.length)L.push('  (aucun renseigné)');sy.forEach(function(x){L.push('  - '+x[0]+' : '+x[1]+' fois')});
  L.push('','Document informatif : il ne remplace pas un avis médical.');
