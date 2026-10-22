@@ -3,6 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Lunéa">
 <title>Lunéa – ton calendrier des règles</title>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=Instrument+Sans:wght@400;600&display=swap" rel="stylesheet">
 <style>
@@ -107,6 +110,19 @@ h2.t{font-size:1.4rem;margin:26px 0 8px}
 #auth{position:fixed;inset:0;z-index:45;background:var(--bg);overflow:auto;display:flex;align-items:center;justify-content:center;padding:24px}
 .pillb{margin-top:8px;border:0;background:#fff;color:#24103F;font:600 .85rem var(--bd);padding:8px 12px;border-radius:99px;cursor:pointer}
 textarea.inp{resize:vertical;line-height:1.5}
+.hi{font:800 1.3rem var(--hd);margin:6px 0 0}
+.tip{margin:0 0 12px;color:var(--muted);font-size:.9rem}
+.hero{flex-wrap:wrap}
+.cbar{flex-basis:100%;display:flex;gap:3px;height:8px;position:relative;margin-top:6px;background:rgba(255,255,255,.2);border-radius:9px}
+.cbar span{border-radius:9px}
+.cbar i{position:absolute;top:-4px;width:16px;height:16px;margin-left:-8px;border-radius:50%;background:#fff;box-shadow:0 0 0 3px rgba(36,16,63,.35)}
+.dot{position:absolute;bottom:5px;left:50%;width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:currentColor;opacity:.8}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 84px);z-index:16;background:var(--ink);color:var(--bg);padding:10px 14px;border-radius:14px;font-size:.9rem;display:flex;gap:12px;align-items:center;box-shadow:0 6px 20px rgba(0,0,0,.3);white-space:nowrap}
+#toast button{border:0;background:none;color:inherit;font:700 .9rem var(--bd);text-decoration:underline;cursor:pointer}
+#land{position:fixed;inset:0;z-index:25;background:var(--bg);overflow:auto;padding:calc(env(safe-area-inset-top,0px) + 28px) 20px 28px;display:flex;align-items:center;justify-content:center}
+.bst{position:fixed;z-index:60;pointer-events:none;font-size:18px;animation:bst 1s ease-out forwards}
+@keyframes bst{from{opacity:1;transform:translate(0,0) scale(.6)}to{opacity:0;transform:translate(var(--dx),var(--dy)) scale(1.2)}}
+@media (prefers-reduced-motion:reduce){.bst{display:none}}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -119,14 +135,19 @@ textarea.inp{resize:vertical;line-height:1.5}
 </header>
 
 <section id="cal">
+  <p class="hi" id="hi"></p>
   <div class="card hero" id="hero"></div>
+  <p class="tip" id="tip"></p>
   <button class="cta" id="today">Mes règles ont commencé aujourd’hui</button>
   <p class="note" style="margin:0 0 10px">Touche le premier jour de tes règles : les jours suivants se remplissent tout seuls. Retouche un jour pour le retirer.</p>
-  <div class="legend"><span><i style="background:var(--m)"></i>Règles</span><span><i style="border:2px dashed var(--m)"></i>Prévues</span><span><i style="background:color-mix(in srgb,var(--o) 35%,transparent)"></i><b id="lgF" style="font-weight:400">Fertile</b></span><span><i style="background:var(--o)"></i>Ovulation</span></div>
+  <div class="legend"><span><i style="background:var(--m)"></i>Règles</span><span><i style="border:2px dashed var(--m)"></i>Prévues</span><span><i style="background:color-mix(in srgb,var(--o) 35%,transparent)"></i><b id="lgF" style="font-weight:400">Fertile</b></span><span><i style="background:var(--o)"></i>Ovulation</span><span><i style="width:6px;height:6px;margin:0 6px 0 4px;background:var(--l)"></i>Note</span></div>
   <div class="wd"><span>L</span><span>M</span><span>M</span><span>J</span><span>V</span><span>S</span><span>D</span></div>
   <div id="months"></div>
 
   <details class="card set" style="margin-top:28px"><summary>Réglages</summary>
+    <label style="display:block;font-weight:600;margin-bottom:6px;font-size:.9rem">Apparence</label><div style="margin-bottom:12px"><button class="ghost" data-th="auto">Auto</button><button class="ghost" data-th="light">Clair</button><button class="ghost" data-th="dark">Sombre</button></div>
+    <label style="display:block;font-weight:600;margin-bottom:6px;font-size:.9rem">Couleurs</label><div style="margin-bottom:12px"><button class="ghost" data-pal="rose">Rose</button><button class="ghost" data-pal="ocean">Océan</button><button class="ghost" data-pal="forest">Forêt</button><button class="ghost" data-pal="lavender">Lavande</button><button class="ghost" data-pal="sun">Soleil</button></div>
+    <div style="margin-bottom:12px"><button class="ghost" id="smp">Mode découverte</button></div>
     <div class="row"><div><label for="cyc">Durée du cycle</label><input type="number" id="cyc" min="21" max="45"></div>
     <div><label for="per">Durée des règles</label><input type="number" id="per" min="2" max="10"></div></div>
     <p class="note">Ces valeurs servent tant que tu n’as pas renseigné deux cycles. Ensuite, la moyenne de tes propres cycles prend le relais.</p>
@@ -143,7 +164,7 @@ textarea.inp{resize:vertical;line-height:1.5}
   <h3>Flux</h3><div class="chips" id="cf"></div>
   <h3>Symptômes</h3><div class="chips" id="cs"></div>
   <h3>Humeur</h3><div class="chips" id="cm"></div>
-  <div class="card alert" id="lateBox" hidden><h3>Tes règles sont en retard</h3><p id="lateTxt" style="margin:6px 0 12px;color:var(--muted)"></p><h3>Test de grossesse</h3><div class="chips" id="ct" style="margin-bottom:0"></div></div>
+  <div class="card alert" id="lateBox" hidden><h3>Tes règles sont en retard</h3><p id="lateTxt" style="margin:6px 0 12px;color:var(--muted)"></p><h3 id="tsh">Test de grossesse</h3><div class="chips" id="ct" style="margin-bottom:0"></div></div>
   <h3>Note du jour</h3>
   <textarea class="inp" id="nt" rows="4" maxlength="600" placeholder="Écris ici ce que tu ressens, tes questions, ce que tu as remarqué…"></textarea>
 </section>
@@ -167,6 +188,7 @@ textarea.inp{resize:vertical;line-height:1.5}
 </section>
 
 <section id="learn" hidden>
+  <div class="card"><b>📱 Ajouter Lunéa à ton écran d’accueil</b><p class="note" style="margin:6px 0 0">Sur iPhone : Safari, bouton Partager, puis « Sur l’écran d’accueil ». Sur Android : menu ⋮ de Chrome, puis « Ajouter à l’écran d’accueil ».</p></div>
   <h2 class="t">Les 4 phases</h2>
   <div class="ph" style="--c:var(--m)"><h3>Règles</h3><p>La muqueuse de l’utérus s’évacue. Fatigue et crampes possibles : chaleur, repos et fer aident.</p></div>
   <div class="ph" style="--c:#5B7CFA"><h3>Phase folliculaire</h3><p>Les œstrogènes montent, un ovule mûrit. L’énergie remonte souvent.</p></div>
@@ -182,6 +204,10 @@ textarea.inp{resize:vertical;line-height:1.5}
     <li>tes règles durent plus de 7 jours, ou tes cycles font moins de 21 jours</li></ul></div>
   <p class="note">Un cycle régulier se situe entre 21 et 35 jours. Des règles très douloureuses ne sont pas « normales » : tu as le droit d’être prise au sérieux.</p>
 
+  <h2 class="t">Premières règles</h2>
+  <details><summary>C’est à quel âge ?</summary><p>Souvent entre 10 et 15 ans. Chaque corps a son rythme.</p></details>
+  <details><summary>Mes cycles sont irréguliers, c’est normal ?</summary><p>Oui, c’est très courant les premières années : le cycle met du temps à se régler. Note tes dates pour y voir plus clair.</p></details>
+  <details><summary>Quand en parler à un adulte ou à un médecin ?</summary><p>Si tu n’as pas eu tes premières règles à 15 ans, si les douleurs sont très fortes, si les saignements sont très abondants, ou si tu as peur ou des questions. Un adulte de confiance, l’infirmière scolaire ou un médecin peuvent t’aider.</p></details>
   <h2 class="t">Idées reçues</h2>
   <details><summary>On ne tombe pas enceinte pendant ses règles.</summary><p>Faux. Avec un cycle court, l’ovulation peut arriver peu après la fin des saignements.</p></details>
   <details><summary>On ne peut pas faire de sport pendant ses règles.</summary><p>Faux. L’activité physique peut soulager les crampes. Écoute ton énergie du jour.</p></details>
@@ -194,6 +220,8 @@ textarea.inp{resize:vertical;line-height:1.5}
 <button class="pill" id="jt" hidden>↑ Aujourd’hui</button>
 <div id="spl" aria-hidden="true"></div>
 <div id="auth" hidden></div>
+<div id="land" hidden></div>
+<div id="toast" hidden></div>
 <div id="lock" hidden></div>
 <div id="tuto" hidden></div>
 <div id="onb" hidden></div>
@@ -223,8 +251,8 @@ function model(){
   var P={},last=starts.length?starts[starts.length-1]:null;
   var sh=starts.length<3?(S.v==='early'?-2:S.v==='late'?2:0):0,mg=starts.length<3?(S.v==='var'?4:S.v==='ok'?0:2):0;
   if(last){for(var k=1;k<=14;k++){var ns=add(last,k*c+sh),ov=add(ns,-14);
-    for(var f=-5;f<=1;f++)P[key(add(ov,f))]='fz';
-    P[key(ov)]='ov';
+    if(!S.simple)for(var f=-5;f<=1;f++)P[key(add(ov,f))]='fz';
+    if(!S.simple)P[key(ov)]='ov';
     for(var j=0;j<p;j++)P[key(add(ns,j))]='pp'}}
   return {c:c,p:p,last:last,P:P,sh:sh,mg:mg,starts:starts,runs:runs}
 }
@@ -235,19 +263,22 @@ function hero(m){
   var day=diff(today,m.last)+1,ns=add(m.last,m.c+m.sh),ov=add(ns,-14),late=diff(today,ns);
   var ph;
   if(day<=m.p)ph='Règles';else if(day<m.c-18)ph='Phase folliculaire';else if(day===m.c-13)ph='Jour d’ovulation';else if(day<=m.c-12)ph='Fenêtre fertile';else ph='Phase lutéale';
+  if(S.simple)ph=day<=m.p?'Règles':day<=m.c-12?'Entre deux règles':'Avant les prochaines règles';
   if(day>m.c+3&&late>0)ph='Pense à renseigner tes règles';
   var right;
   if(late>0)right='<strong>Règles attendues depuis '+late+' jour'+(late>1?'s':'')+'</strong>'+fmt(ns)+'<br><button class="pillb" id="lt">Écrire mon retard</button>';
   else{var n=-late;right='<strong>Règles dans '+n+' jour'+(n>1?'s':'')+'</strong>'+fmt(ns)}
-  var ovLine='';if(diff(ov,today)>=0)ovLine='<br>Ovulation : '+fmt(ov);if(m.mg)ovLine+='<br>Marge de ± '+m.mg+' j';
+  var ovLine='';if(!S.simple&&diff(ov,today)>=0)ovLine='<br>Ovulation : '+fmt(ov);if(m.mg)ovLine+='<br>Marge de ± '+m.mg+' j';
   var fz=(ph==='Fenêtre fertile'||ph==='Jour d’ovulation');
   if(S.g==='avoid'&&fz)ovLine+='<br><b>Risque de grossesse élevé : protège-toi.</b>';
   if(S.g==='conceive'&&fz)ovLine+='<br><b>Fenêtre favorable pour concevoir.</b>';
-  h.innerHTML='<div><b>Jour '+day+'</b><small>'+ph+'</small></div><div class="r">'+right+ovLine+'</div>';
+  var fd=Math.max(m.c-19-m.p,0),P2=S.simple?[[m.p,'#FF9FB0'],[Math.max(m.c-m.p-12,0),'#9CB4FF'],[12,'#D3B5FF']]:[[m.p,'#FF9FB0'],[fd,'#9CB4FF'],[7,'#FFD166'],[12,'#D3B5FF']];
+  var bar='<div class="cbar">'+P2.filter(function(x){return x[0]>0}).map(function(x){return '<span style="flex:'+x[0]+';background:'+x[1]+'"></span>'}).join('')+'<i style="left:'+Math.min(100,Math.max(0,(Math.min(day,m.c)-.5)/m.c*100))+'%"></i></div>';
+  h.innerHTML='<div><b>Jour '+day+'</b><small>'+ph+'</small></div><div class="r">'+right+ovLine+'</div>'+bar;
 }
 
 function render(){
-  var m=model();hero(m);$('lgF').textContent=S.g==='avoid'?'Risque élevé':S.g==='conceive'?'Favorable':'Fertile';
+  var m=model();theme(S.theme);pal(S.pal);hero(m);var pk=phaseAt(m,today);$('tip').textContent=pk?'💡 '+ADV[pk][1]:'';$('hi').textContent=greet();var ls=document.querySelectorAll('.legend span');if(ls[3]){ls[2].hidden=ls[3].hidden=!!S.simple}$('smp').textContent='Mode découverte : '+(S.simple?'activé':'désactivé');$('lgF').textContent=S.g==='avoid'?'Risque élevé':S.g==='conceive'?'Favorable':'Fertile';
   var L={};S.logged.forEach(function(k){L[k]=1});
   var html='',start=new Date(today.getFullYear(),today.getMonth()-2,1);
   for(var i=0;i<15;i++){
@@ -261,7 +292,7 @@ function render(){
       else if(m.P[k]){var t=m.P[k];cls+=' '+t;lab+=t==='pp'?', règles prévues':t==='ov'?', ovulation estimée':', fenêtre fertile'}
       if(fut)cls+=' fut';
       if(k===key(today))cls+=' today';
-      html+='<button class="'+cls+'" data-k="'+k+'" aria-label="'+lab+'">'+d+'</button>';
+      html+='<button class="'+cls+'" data-k="'+k+'" aria-label="'+lab+'">'+d+(hasLog(k)?'<i class="dot"></i>':'')+'</button>';
     }
     html+='</div></div>';
   }
@@ -271,13 +302,13 @@ function render(){
 $('months').addEventListener('click',function(e){
   var b=e.target.closest('.d');if(!b)return;
   var k=b.getAttribute('data-k');if(diff(parse(k),today)>0)return;
-  var y=window.scrollY,i=S.logged.indexOf(k);
+  var y=window.scrollY,i=S.logged.indexOf(k),prev=S.logged.slice();
   if(i>=0)S.logged.splice(i,1);
   else{var dt=parse(k),n=S.logged.indexOf(key(add(dt,-1)))>=0?1:model().p;
    for(var j=0;j<n;j++){var d2=add(dt,j);if(diff(d2,today)>0)break;var k2=key(d2);if(S.logged.indexOf(k2)<0)S.logged.push(k2)}}
-  save();render();window.scrollTo(0,y);
+  save();render();window.scrollTo(0,y);if(i<0)burst(e.clientX,e.clientY);toast(i>=0?'Jour retiré':'Règles notées',function(){S.logged=prev;save();render();window.scrollTo(0,y)});
 });
-$('today').addEventListener('click',function(){var k=key(today);if(S.logged.indexOf(k)<0)S.logged.push(k);save();render();var c=$('cur');if(c)c.scrollIntoView({block:'start'})});
+$('today').addEventListener('click',function(){burst(innerWidth/2,innerHeight*.6);var k=key(today);if(S.logged.indexOf(k)<0)S.logged.push(k);save();render();var c=$('cur');if(c)c.scrollIntoView({block:'start'})});
 $('cyc').addEventListener('change',function(){S.c=clamp(parseInt(this.value,10)||28,21,45);save();render()});
 $('per').addEventListener('change',function(){S.p=clamp(parseInt(this.value,10)||5,2,10);save();render()});
 var armed=false;
@@ -305,6 +336,34 @@ var SY=['Crampes','Maux de tête','Ballonnements','Fatigue','Seins sensibles','A
 function mood(v){var r=MO.filter(function(x){return x[0]===v})[0];return r?r[1]:v}
 function phaseAt(m,dt){if(!m.last)return null;var d=diff(dt,m.last)+1;if(d<1)return null;d=(d-1)%m.c+1;if(d<=m.p)return 'r';if(d<m.c-18)return 'f';if(d<=m.c-12)return 'o';return 'l'}
 function chips(a,cur,t){return a.map(function(x){var ar=Array.isArray(x),v=ar?x[0]:x,l=ar?x[1]:x,on=Array.isArray(cur)?cur.indexOf(v)>=0:cur===v;return `<button class="chip" data-t="${t}" data-v="${v}" aria-pressed="${on}">${l}</button>`}).join('')}
+var SMP={r:'Règles',f:'Entre deux règles',o:'Entre deux règles',l:'Avant les règles'};
+var PAL={ocean:['#18A0AB','#4C84FF'],forest:['#35A86A','#8DB33A'],lavender:['#9163F0','#C467D6'],sun:['#F0703A','#F2A900']};
+function pal(p){var r=document.documentElement.style;if(PAL[p]){r.setProperty('--m',PAL[p][0]);r.setProperty('--l',PAL[p][1])}else{r.removeProperty('--m');r.removeProperty('--l')}}
+document.addEventListener('click',function(e){var b=e.target.closest('[data-pal]');if(b){S.pal=b.dataset.pal;save();pal(S.pal)}if(e.target.closest('#smp')){S.simple=!S.simple;save();render()}});
+function burst(x,y){if(window.matchMedia&&matchMedia('(prefers-reduced-motion:reduce)').matches)return;
+ for(var i=0;i<10;i++){var s=document.createElement('span');s.className='bst';s.textContent=['🌙','✨','💜','🩷'][i%4];s.style.left=x+'px';s.style.top=y+'px';
+  s.style.setProperty('--dx',(Math.random()*140-70)+'px');s.style.setProperty('--dy',-(60+Math.random()*100)+'px');document.body.appendChild(s);
+  (function(el){setTimeout(function(){el.remove()},1100)})(s)}}
+function landing(){var o=$('land');o.hidden=false;
+ o.innerHTML=`<div class="ob" style="text-align:center">${logo(72,'lgl2')}<div class="wm">Lunéa</div><h2 style="font-size:1.5rem;margin:10px 0 18px">Comprends ton cycle, sans prise de tête.</h2><div class="card" style="text-align:left"><p style="margin:0 0 10px">📅 Un calendrier qui prévoit tes prochaines règles</p><p style="margin:0 0 10px">📝 Symptômes, humeur, retards : tu notes, c’est tout</p><p style="margin:0">🔒 Gratuit, sans pub, avec un code secret en option</p></div><button class="cta" data-l="go">Commencer</button><button class="ghost" data-l="simple" style="width:100%">Je découvre mes premières règles</button></div>`}
+$('land').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;
+ if(b.dataset.l==='simple'){S.simple=true;S.g='track'}S.seen=true;save();$('land').hidden=true;$('land').innerHTML='';A=0;step()});
+function recap(){
+ var d=new Date(),pre=d.getFullYear()+'-'+p2(d.getMonth()+1),mon=d.toLocaleDateString('fr-FR',{month:'long',year:'numeric'});
+ var days=S.logged.filter(function(k){return k.indexOf(pre)===0}).length,cnt={},md={};
+ Object.keys(S.log).forEach(function(k){if(k.indexOf(pre)!==0)return;var e=S.log[k];(e.s||[]).forEach(function(x){cnt[x]=(cnt[x]||0)+1});if(e.m)md[e.m]=(md[e.m]||0)+1});
+ function top(o){return Object.keys(o).sort(function(a,b){return o[b]-o[a]})[0]}
+ var m=model(),sy=top(cnt),mo=top(md);
+ function tile(v,l){return `<div style="background:rgba(255,255,255,.18);border-radius:14px;padding:10px"><b style="font:800 1.25rem var(--hd);display:block">${v}</b><span style="font-size:.8rem">${l}</span></div>`}
+ return `<div class="card" style="background:linear-gradient(135deg,var(--m),var(--l));color:#fff;border:0"><div style="display:flex;align-items:center;gap:8px">${logo(26,'lgr')}<b style="font:800 1.1rem var(--hd)">Lunéa</b></div><h3 style="margin:14px 0 10px;text-transform:capitalize;font-size:1.5rem">${mon}</h3><div class="stat" style="gap:8px">${tile(days+' j','de règles ce mois-ci')}${tile(m.last?m.c+' j':'–','cycle moyen')}${tile(sy||'–','symptôme le plus fréquent')}${tile(mo?mood(mo):'–','humeur la plus fréquente')}</div><p style="margin:12px 0 0;font-size:.82rem;opacity:.9">📸 Fais une capture d’écran pour partager ton bilan.</p></div>`}
+var tt=null;
+function toast(msg,undo){var t=$('toast');t.innerHTML='<span>'+msg+'</span>'+(undo?'<button>Annuler</button>':'');t.hidden=false;clearTimeout(tt);
+ if(undo)t.querySelector('button').onclick=function(){undo();t.hidden=true};
+ tt=setTimeout(function(){t.hidden=true},4500)}
+function greet(){var h=new Date().getHours(),g=h<5?'Bonne nuit':h<12?'Bonjour':h<18?'Bon après-midi':'Bonsoir';return g+(S.name?', '+S.name:'')+' 🌙'}
+function theme(t){var r=document.documentElement;if(t==='light'||t==='dark')r.setAttribute('data-theme',t);else r.removeAttribute('data-theme')}
+document.addEventListener('click',function(e){var b=e.target.closest('[data-th]');if(b){S.theme=b.dataset.th;save();theme(S.theme)}});
+function hasLog(k){var e=S.log[k];return !!(e&&(e.n||e.t||e.m||e.f||(e.s&&e.s.length)))}
 var TS=[['none','Pas fait'],['neg','Négatif'],['pos','Positif']];
 function lateDays(m,dt){if(!m.last)return 0;var n=diff(dt,add(m.last,m.c+m.sh));return(n>0&&n<=60&&diff(dt,m.last)>0)?n:0}
 function lastTest(){for(var i=0;i<=30;i++){var e=S.log[key(add(today,-i))];if(e&&e.t)return e.t}return ''}
@@ -313,14 +372,15 @@ $('nt').addEventListener('input',function(){var k=$('dd').value||key(today),en=S
 function dayView(){
  var k=$('dd').value||key(today),e=S.log[k]||{s:[],m:'',f:''},m=model(),ph=phaseAt(m,parse(k));
  $('dtitle').textContent=(S.name?'Bonjour '+S.name+' · ':'')+fmt(parse(k));
- $('adv').innerHTML=ph?`<h3>${ADV[ph][0]}</h3><p style="margin:6px 0 0">${ADV[ph][1]}</p>`:'<p style="margin:0">Renseigne tes dernières règles pour voir des conseils adaptés à ta phase.</p>';
+ $('adv').innerHTML=ph?`<h3>${S.simple?SMP[ph]:ADV[ph][0]}</h3><p style="margin:6px 0 0">${ADV[ph][1]}</p>`:'<p style="margin:0">Renseigne tes dernières règles pour voir des conseils adaptés à ta phase.</p>';
  $('cf').innerHTML=chips(FL,e.f,'f');$('cs').innerHTML=chips(SY,e.s,'s');$('cm').innerHTML=chips(MO,e.m,'m');
  var late=lateDays(m,parse(k));$('lateBox').hidden=!(late>0);
  if(late>0){var tx='Retard de <b>'+late+' jour'+(late>1?'s':'')+'</b> par rapport à la date prévue. Un retard peut avoir plusieurs causes : stress, changement de rythme, sport intense, voyage, maladie ou grossesse. Si une grossesse est possible, un test est généralement fiable à partir du jour du retard (de préférence le matin).';
   if(e.t==='pos')tx+=' Test positif : prends rendez-vous avec un médecin ou une sage-femme pour confirmer et être suivie.';
   if(e.t==='neg')tx+=' Si tes règles ne viennent pas, refais un test dans quelques jours : un test fait trop tôt peut être négatif à tort.';
   tx+=' En cas de doute ou si le retard se prolonge, parles-en à un professionnel de santé.';
-  $('lateTxt').innerHTML=tx;$('ct').innerHTML=chips(TS,e.t||'','t')}
+  if(S.simple)tx='Retard de <b>'+late+' jour'+(late>1?'s':'')+'</b>. Les premières années, les cycles sont souvent irréguliers : c’est très courant. Si ça t’inquiète ou si ça dure, parles-en à un adulte de confiance, à l’infirmière scolaire ou à un médecin.';
+  $('tsh').hidden=!!S.simple;$('lateTxt').innerHTML=tx;$('ct').innerHTML=S.simple?'':chips(TS,e.t||'','t')}
  $('nt').value=e.n||'';
 }
 $('day').addEventListener('click',function(e){
@@ -355,7 +415,7 @@ function stats(){
  var sy=tally(function(e){return e.s||[]}),mo=tally(function(e){return [e.m]}).map(function(x){return [mood(x[0]),x[1]]});
  h+='<div class="card"><h3>Symptômes fréquents</h3>'+(sy.length?hb(sy):'<p class="note">Note tes symptômes dans l’onglet Jour : tu verras ici ce qui revient le plus.</p>')+'</div>';
  if(mo.length)h+='<div class="card"><h3>Humeurs fréquentes</h3>'+hb(mo)+'</div>';
- $('st').innerHTML=h;$('cals').innerHTML=calLinks(m);
+ $('st').innerHTML=recap()+h;$('cals').innerHTML=calLinks(m);
 }
 var dl=null;try{if(window.claude&&claude.use)claude.use('downloads').then(function(d){dl=d},function(){})}catch(e){}
 function say(t){$('msg').textContent=t}
@@ -450,7 +510,7 @@ function pinSetup(){if(!CR)return;var x='<button class="ghost" data-act="cancel"
 function resetAll(){try{localStorage.removeItem('cycle-v2');localStorage.removeItem(LK)}catch(e){}
  S={logged:[],c:28,p:5,v:'ok',name:'',done:false,g:'track',log:{}};$('lock').hidden=true;$('lock').innerHTML='';refreshPin();render();A=0;step()}
 $('pinb').onclick=function(){if(pinGet()){try{localStorage.removeItem(LK)}catch(e){}refreshPin()}else pinSetup()};
-var A=0,steps=[
+var D=1,A=0,steps=[
  {t:'text',q:'Bienvenue. Comment t’appelles-tu ?',sub:'Quelques questions pour personnaliser tes prévisions.'},
  {k:'p',q:'Combien de jours durent tes règles en général ?',o:[2,3,4,5,6,7,8],u:' jours'},
  {k:'c',q:'Quelle est la durée habituelle de ton cycle ?',sub:'Du premier jour de tes règles au premier jour des suivantes.',o:[24,26,28,30,32,35],u:' jours'},
@@ -460,6 +520,7 @@ var A=0,steps=[
  {t:'date',q:'Quand ont commencé tes dernières règles ?'}
 ];
 function step(){
+ while(S.simple&&steps[A]&&steps[A].k==='g')A+=D;if(A<0)A=0;
  var s=steps[A],h='<div class="ob">'+(A===0?'<div style="text-align:center;margin:0 0 24px">'+logo(56,'lgb')+'<div class="wm">Lunéa</div><p class="note" style="margin:0 auto">Ton cycle, enfin clair.</p></div>':'')+'<div class="bar"><i style="width:'+Math.round((A+1)/steps.length*100)+'%"></i></div><h2>'+s.q+'</h2>'+(s.sub?'<p class="note">'+s.sub+'</p>':'');
  if(s.t==='text')h+='<input id="obi" type="text" maxlength="30" autocomplete="given-name" placeholder="Ton prénom" value="'+(S.name||'').replace(/"/g,'')+'"><button class="cta" data-go="1">Continuer</button>';
  else if(s.t==='date')h+='<input id="obi" type="date" max="'+key(today)+'"><button class="cta" data-go="1">Terminer</button><button class="ghost" data-skip="1">Je ne m’en souviens pas</button>';
@@ -473,7 +534,7 @@ function finish(){
 }
 $('onb').addEventListener('click',function(e){
  var b=e.target.closest('button');if(!b)return;if(b.dataset.skipall){S.done=true;save();$('onb').hidden=true;render();if(!S.tuto)tuto(0);return}var s=steps[A];
- if(b.dataset.back){A--;step();return}
+ if(b.dataset.back){D=-1;A--;step();D=1;return}
  if(s.t==='text')S.name=$('obi').value.trim().slice(0,30);
  else if(s.t==='date'){var v=$('obi').value;if(!b.dataset.skip&&v)S.start=v}
  else if(b.dataset.v!==undefined)S[s.k]=(s.k==='v'||s.k==='g'||s.k==='pq')?b.dataset.v:+b.dataset.v;
@@ -510,7 +571,7 @@ function authInit(){
 }
 $('outb').onclick=function(){if(!sb)return;sb.auth.signOut().then(function(){try{localStorage.removeItem('cycle-v2');localStorage.removeItem(LK)}catch(e){}location.reload()})};
 function start(){render();refreshPin();if(pinGet())lockScreen();
- if(!S.done){A=0;step()}else{var c=$('cur');if(c)c.scrollIntoView({block:'start'});if(!S.tuto)setTimeout(function(){tuto(0)},2800)}}
+ if(!S.done){if(S.seen)step();else landing()}else{var c=$('cur');if(c)c.scrollIntoView({block:'start'});if(!S.tuto)setTimeout(function(){tuto(0)},2800)}}
 authInit();
 })();
 </script>
