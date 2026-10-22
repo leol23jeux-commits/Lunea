@@ -1,4 +1,5 @@
 window.LUNEA = {
-  url: "COLLE-ICI-TON-ADRESSE",
-  key: "COLLE-ICI-TA-CLE-PUBLIQUE"
+  url: "https://gabkoknfrmaphqwyhuso.supabase.co",
+  key: "sb_publishable_F-B9gi1wa7YfpKI8DpFHnw_Ux880C0N"
 };
+
