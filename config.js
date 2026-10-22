@@ -1,0 +1,4 @@
+window.LUNEA = {
+  url: "COLLE-ICI-TON-ADRESSE",
+  key: "COLLE-ICI-TA-CLE-PUBLIQUE"
+};
