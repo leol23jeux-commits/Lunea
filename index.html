@@ -27,7 +27,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .wm{font:800 2rem var(--hd);letter-spacing:-.03em;margin-top:6px}
 .top h1{font-size:1.7rem;font-weight:800;letter-spacing:-.02em}
 .tabs{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 10px);width:min(496px,calc(100% - 24px));display:flex;background:var(--surface);border:1px solid var(--line);box-shadow:0 6px 24px rgba(36,16,63,.18);border-radius:99px;padding:5px;gap:2px;z-index:15}
-.tabs button{border:0;background:none;color:var(--muted);flex:1;font:600 .85rem var(--bd);padding:12px 4px;border-radius:99px;cursor:pointer}
+.tabs button{border:0;background:none;color:var(--muted);flex:1;font:600 .78rem var(--bd);padding:12px 2px;border-radius:99px;cursor:pointer}
 .tabs button[aria-selected=true]{background:var(--ink);color:var(--bg)}
 button:focus-visible,summary:focus-visible,input:focus-visible{outline:3px solid var(--l);outline-offset:2px}
 .card{background:var(--surface);border-radius:24px;padding:20px;margin:12px 0}
@@ -124,6 +124,13 @@ textarea.inp{resize:vertical;line-height:1.5}
 .bst{position:fixed;z-index:60;pointer-events:none;font-size:18px;animation:bst 1s ease-out forwards}
 @keyframes bst{from{opacity:1;transform:translate(0,0) scale(.6)}to{opacity:0;transform:translate(var(--dx),var(--dy)) scale(1.2)}}
 @media (prefers-reduced-motion:reduce){.bst{display:none}}
+#aiLog{display:flex;flex-direction:column;gap:8px;margin:8px 0 12px}
+.bub{max-width:88%;padding:10px 14px;border-radius:18px;white-space:pre-wrap;line-height:1.45}
+.bub.u{align-self:flex-end;background:var(--ink);color:var(--bg);border-bottom-right-radius:6px}
+.bub.a{align-self:flex-start;background:var(--surface);border-bottom-left-radius:6px}
+.aibar{position:sticky;bottom:calc(env(safe-area-inset-bottom,0px) + 76px);display:flex;gap:8px;background:var(--bg);padding:8px 0}
+.aibar textarea{flex:1;font:inherit;color:var(--ink);background:var(--surface);border:2px solid var(--line);border-radius:16px;padding:10px 12px;resize:none}
+.aibar button{border:0;background:var(--m);color:#fff;border-radius:16px;width:48px;font-size:1.1rem;cursor:pointer}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -131,7 +138,7 @@ textarea.inp{resize:vertical;line-height:1.5}
 <div class="wrap">
 <header>
   <div class="top"><h1 id="brand"></h1>
-    <div class="tabs" role="tablist"><button role="tab" id="t1" aria-selected="true">Calendrier</button><button role="tab" id="t3" aria-selected="false">Jour</button><button role="tab" id="t4" aria-selected="false">Bilan</button><button role="tab" id="t2" aria-selected="false">Guide</button></div>
+    <div class="tabs" role="tablist"><button role="tab" id="t1" aria-selected="true">Calendrier</button><button role="tab" id="t3" aria-selected="false">Jour</button><button role="tab" id="t4" aria-selected="false">Bilan</button><button role="tab" id="t2" aria-selected="false">Guide</button><button role="tab" id="t5" aria-selected="false">Lunéa IA</button></div>
   </div>
 </header>
 
@@ -185,6 +192,17 @@ textarea.inp{resize:vertical;line-height:1.5}
     <button class="ghost" id="bk">Sauvegarder mes données</button>
     <label class="ghost" for="rs" style="display:inline-block;cursor:pointer">Restaurer</label><input type="file" id="rs" accept=".json,application/json" hidden>
     <p class="note" id="msg" aria-live="polite" style="margin-top:10px"></p>
+  </div>
+</section>
+
+<section id="ai" hidden>
+  <h2 class="t">Lunéa IA</h2>
+  <div class="card" id="aiNotice"><b>Avant de commencer</b><p class="note" style="margin:6px 0 10px">Cette assistante utilise une IA de Google. Tes messages sont envoyés à Google et peuvent être utilisés pour améliorer ses produits. N’écris pas d’informations qui t’identifient (nom, adresse, école…). Elle ne voit pas tes données de suivi. Elle donne des informations générales, peut se tromper et ne remplace pas un médecin. En urgence, appelle le 15 ou le 112.</p><button class="cta" id="aiOk">J’ai compris, continuer</button></div>
+  <div id="aiChat" hidden>
+    <div class="chips" id="aiQs"><button class="chip" data-q="Pourquoi mes règles peuvent-elles être en retard ?">Règles en retard</button><button class="chip" data-q="Comment soulager les crampes de règles ?">Crampes</button><button class="chip" data-q="Mon cycle est-il normal ?">Cycle normal ?</button><button class="chip" data-q="C’est quoi l’ovulation ?">Ovulation</button></div>
+    <div id="aiLog"></div>
+    <div class="aibar"><textarea id="aiIn" rows="1" maxlength="600" placeholder="Pose ta question…"></textarea><button id="aiSend" aria-label="Envoyer">➤</button></div>
+    <p class="note">En urgence : 15 ou 112. <button class="ghost" id="aiNew">Nouvelle conversation</button></p>
   </div>
 </section>
 
@@ -318,13 +336,13 @@ $('clear').addEventListener('click',function(){
   S.logged=[];save();render();armed=false;this.textContent='Effacer mes données';
 });
 function tab(w){
-  $('cal').hidden=w!==1;$('learn').hidden=w!==2;$('day').hidden=w!==3;$('stats').hidden=w!==4;
-  [1,2,3,4].forEach(function(i){$('t'+i).setAttribute('aria-selected',w===i)});
-  if(w===3)dayView();if(w===4)stats();upd();
+  $('cal').hidden=w!==1;$('learn').hidden=w!==2;$('day').hidden=w!==3;$('stats').hidden=w!==4;$('ai').hidden=w!==5;
+  [1,2,3,4,5].forEach(function(i){$('t'+i).setAttribute('aria-selected',w===i)});
+  if(w===3)dayView();if(w===4)stats();if(w===5)aiView();upd();
   window.scrollTo(0,0);
 }
 $('t1').onclick=function(){tab(1);var c=$('cur');if(c)c.scrollIntoView({block:'start'})};
-$('t2').onclick=function(){tab(2)};$('t3').onclick=function(){tab(3)};$('t4').onclick=function(){tab(4)};
+$('t2').onclick=function(){tab(2)};$('t3').onclick=function(){tab(3)};$('t4').onclick=function(){tab(4)};$('t5').onclick=function(){tab(5)};
 function logo(sz,id){return `<svg width="${sz}" height="${sz}" viewBox="0 0 48 48" role="img" aria-label="Logo Lunéa"><defs><mask id="${id}"><circle cx="24" cy="24" r="21" fill="#fff"/><circle cx="31" cy="19" r="17" fill="#000"/></mask></defs><g mask="url(#${id})"><g transform="rotate(-35 24 24)"><rect x="-12" y="-14" width="72" height="18" fill="#E5334F"/><rect x="-12" y="4" width="72" height="18" fill="#5B7CFA"/><rect x="-12" y="22" width="72" height="18" fill="#F2A900"/><rect x="-12" y="40" width="72" height="18" fill="#8B4FD9"/></g></g></svg>`}
 $('brand').innerHTML=logo(24,'lga')+'<span>Lunéa</span>';
 (function(){var s=$('spl');if(window.matchMedia&&matchMedia('(prefers-reduced-motion:reduce)').matches){s.remove();return}
@@ -357,6 +375,23 @@ function recap(){
  var m=model(),sy=top(cnt),mo=top(md);
  function tile(v,l){return `<div style="background:rgba(255,255,255,.18);border-radius:14px;padding:10px"><b style="font:800 1.25rem var(--hd);display:block">${v}</b><span style="font-size:.8rem">${l}</span></div>`}
  return `<div class="card" style="background:linear-gradient(135deg,var(--m),var(--l));color:#fff;border:0"><div style="display:flex;align-items:center;gap:8px">${logo(26,'lgr')}<b style="font:800 1.1rem var(--hd)">Lunéa</b></div><h3 style="margin:14px 0 10px;text-transform:capitalize;font-size:1.5rem">${mon}</h3><div class="stat" style="gap:8px">${tile(days+' j','de règles ce mois-ci')}${tile(m.last?m.c+' j':'–','cycle moyen')}${tile(sy||'–','symptôme le plus fréquent')}${tile(mo?mood(mo):'–','humeur la plus fréquente')}</div><p style="margin:12px 0 0;font-size:.82rem;opacity:.9">📸 Fais une capture d’écran pour partager ton bilan.</p></div>`}
+var AH=[],busy=false;
+function aiRender(){var l=$('aiLog');l.innerHTML='';AH.forEach(function(x){var d=document.createElement('div');d.className='bub '+(x.r==='user'?'u':'a');d.textContent=x.t;l.appendChild(d)});if(AH.length>1)window.scrollTo(0,document.body.scrollHeight)}
+function aiView(){var ok=!!S.aiok;$('aiNotice').hidden=ok;$('aiChat').hidden=!ok;
+ if(ok&&!AH.length){AH.push({r:'assistant',g:true,t:'Bonjour ! Je suis l’assistante Lunéa. Pose-moi tes questions sur le cycle, les règles ou l’ovulation. Je ne remplace pas un professionnel de santé.'});aiRender()}}
+function aiSend(txt){txt=(txt||$('aiIn').value).trim();if(!txt||busy)return;txt=txt.slice(0,600);$('aiIn').value='';
+ AH.push({r:'user',t:txt});AH.push({r:'assistant',p:true,t:'…'});aiRender();busy=true;
+ var msgs=AH.filter(function(x){return !x.g&&!x.p&&!x.e}).slice(-10).map(function(x){return {role:x.r==='user'?'user':'assistant',content:x.t}});
+ fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:msgs})})
+ .then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j}})})
+ .then(function(x){AH.pop();if(x.ok&&x.j.reply)AH.push({r:'assistant',t:x.j.reply});else AH.push({r:'assistant',e:true,t:x.j.error||'Je n’ai pas pu répondre. Réessaie dans un instant.'})})
+ .catch(function(){AH.pop();AH.push({r:'assistant',e:true,t:'Impossible de joindre l’assistante. Vérifie ta connexion et réessaie.'})})
+ .then(function(){busy=false;aiRender()})}
+$('aiOk').onclick=function(){S.aiok=true;save();aiView()};
+$('aiSend').onclick=function(){aiSend()};
+$('aiIn').addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();aiSend()}});
+$('aiQs').addEventListener('click',function(e){var b=e.target.closest('[data-q]');if(b)aiSend(b.dataset.q)});
+$('aiNew').onclick=function(){AH=[];aiView()};
 var tt=null;
 function toast(msg,undo){var t=$('toast');t.innerHTML='<span>'+msg+'</span>'+(undo?'<button>Annuler</button>':'');t.hidden=false;clearTimeout(tt);
  if(undo)t.querySelector('button').onclick=function(){undo();t.hidden=true};
@@ -558,7 +593,7 @@ function showAuth(msg){var o=$('auth');o.hidden=false;
    $('abtn').disabled=false;
    $('amsg').textContent=r.error?'Impossible d’envoyer le lien. Réessaie dans un instant.':'C’est envoyé ! Ouvre l’e-mail et touche le lien pour te connecter.'})}}
 function loadRemote(uid){return sb.from('lunea_data').select('data').eq('user_id',uid).maybeSingle().then(function(r){
- var d=r.data&&r.data.data;
+ if(r.error)throw r.error;var d=r.data&&r.data.data;
  if(d&&d.logged)S=Object.assign(DEF(),d);else{S=DEF();}
  try{localStorage.setItem('cycle-v2',JSON.stringify(S))}catch(e){}
  if(!(d&&d.logged))push()})}
@@ -566,8 +601,10 @@ function authInit(){
  $('outb').hidden=!sb;
  if(!sb){$('auth').hidden=true;start();return}
  var started=false;
- function go(session){if(started)return;if(!session){showAuth();return}started=true;$('auth').hidden=true;$('auth').innerHTML='';loadRemote(session.user.id).then(start)}
- sb.auth.getSession().then(function(r){go(r.data.session)});
+ var hp=new URLSearchParams(location.hash.replace(/^#/,'')),qp=new URLSearchParams(location.search),ec=hp.get('error_code')||qp.get('error_code'),ed=hp.get('error_description')||qp.get('error_description'),urlErr=null;
+ if(ec==='otp_expired')urlErr='Ce lien a expiré ou a déjà été utilisé. Demande-en un nouveau.';else if(ed)urlErr='Le lien n’a pas fonctionné : '+ed.replace(/\+/g,' ')+'.';
+ function go(session){if(started)return;if(!session){showAuth();return}started=true;$('auth').hidden=true;$('auth').innerHTML='';loadRemote(session.user.id).then(start,function(er){showAuth('Connecté, mais impossible de charger tes données : '+((er&&er.message)||'erreur')+'.')})}
+ sb.auth.getSession().then(function(r){if(r.error){showAuth('Connexion impossible : '+r.error.message);return}if(!r.data.session&&urlErr){showAuth(urlErr);return}go(r.data.session)});
  sb.auth.onAuthStateChange(function(ev,s){if(ev==='SIGNED_IN'&&s)go(s)});
 }
 $('outb').onclick=function(){if(!sb)return;sb.auth.signOut().then(function(){try{localStorage.removeItem('cycle-v2');localStorage.removeItem(LK)}catch(e){}location.reload()})};
