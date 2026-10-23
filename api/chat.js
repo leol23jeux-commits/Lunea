@@ -1,4 +1,4 @@
-const MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite';
+const MODEL = process.env.GEMINI_MODEL || 'gemini-3.1-flash-lite';
 
 const SYSTEM = `Tu es l'assistante de Lunéa, un site de suivi du cycle menstruel. Tu réponds en français, avec bienveillance, de façon simple et claire, en 120 mots maximum sauf si on te demande plus de détails.
 Tu donnes des informations générales et éducatives sur le cycle, les règles, l'ovulation, le syndrome prémenstruel, les premières règles, la contraception et la grossesse.
@@ -41,26 +41,50 @@ module.exports = async (req, res) => {
   if (!msgs.length || msgs[msgs.length - 1].role !== 'user') return res.status(400).json({ error: 'Message invalide.' });
 
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 20000);
+  const timer = setTimeout(() => ctrl.abort(), 30000);
   try {
-    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`, {
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:streamGenerateContent?alt=sse`, {
       method: 'POST',
       signal: ctrl.signal,
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: SYSTEM }] },
         contents: msgs.map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] })),
-        generationConfig: { temperature: 0.4, maxOutputTokens: 1200 }
+        generationConfig: { temperature: 0.4, maxOutputTokens: 800 }
       })
     });
     if (r.status === 429) return res.status(429).json({ error: 'L’assistante est très sollicitée. Réessaie dans quelques minutes.' });
     if (!r.ok) { console.error('Gemini', r.status, (await r.text()).slice(0, 300)); return res.status(502).json({ error: 'L’assistante est indisponible pour le moment.' }); }
-    const data = await r.json();
-    const parts = data && data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts;
-    const text = (parts || []).map(p => p.text || '').join('').trim();
-    if (!text) return res.status(200).json({ reply: 'Je ne peux pas répondre à cette question. Parles-en à un professionnel de santé.' });
-    return res.status(200).json({ reply: text });
+
+    res.status(200);
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    res.setHeader('X-Accel-Buffering', 'no');
+    const reader = r.body.getReader();
+    const dec = new TextDecoder();
+    let buf = '', sent = false;
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      let i;
+      while ((i = buf.indexOf('\n')) >= 0) {
+        const line = buf.slice(0, i).trim();
+        buf = buf.slice(i + 1);
+        if (!line.startsWith('data:')) continue;
+        const payload = line.slice(5).trim();
+        if (!payload || payload === '[DONE]') continue;
+        try {
+          const j = JSON.parse(payload);
+          const parts = j.candidates && j.candidates[0] && j.candidates[0].content && j.candidates[0].content.parts;
+          const t = (parts || []).map(p => p.text || '').join('');
+          if (t) { res.write(t); sent = true; }
+        } catch (e) {}
+      }
+    }
+    if (!sent) res.write('Je ne peux pas répondre à cette question. Parles-en à un professionnel de santé.');
+    return res.end();
   } catch (e) {
-    return res.status(502).json({ error: 'L’assistante est indisponible pour le moment.' });
+    if (!res.headersSent) return res.status(502).json({ error: 'L’assistante est indisponible pour le moment.' });
+    return res.end();
   } finally { clearTimeout(timer); }
 };
