@@ -131,6 +131,8 @@ textarea.inp{resize:vertical;line-height:1.5}
 .aibar{position:sticky;bottom:calc(env(safe-area-inset-bottom,0px) + 76px);display:flex;gap:8px;background:var(--bg);padding:8px 0}
 .aibar textarea{flex:1;font:inherit;color:var(--ink);background:var(--surface);border:2px solid var(--line);border-radius:16px;padding:10px 12px;resize:none}
 .aibar button{border:0;background:var(--m);color:#fff;border-radius:16px;width:48px;font-size:1.1rem;cursor:pointer}
+.tp{display:inline-flex;gap:4px;padding:4px 0}.tp i{width:7px;height:7px;border-radius:50%;background:var(--muted);animation:tpb 1s infinite}.tp i:nth-child(2){animation-delay:.15s}.tp i:nth-child(3){animation-delay:.3s}
+@keyframes tpb{0%,60%,100%{opacity:.3;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -376,16 +378,23 @@ function recap(){
  function tile(v,l){return `<div style="background:rgba(255,255,255,.18);border-radius:14px;padding:10px"><b style="font:800 1.25rem var(--hd);display:block">${v}</b><span style="font-size:.8rem">${l}</span></div>`}
  return `<div class="card" style="background:linear-gradient(135deg,var(--m),var(--l));color:#fff;border:0"><div style="display:flex;align-items:center;gap:8px">${logo(26,'lgr')}<b style="font:800 1.1rem var(--hd)">Lunéa</b></div><h3 style="margin:14px 0 10px;text-transform:capitalize;font-size:1.5rem">${mon}</h3><div class="stat" style="gap:8px">${tile(days+' j','de règles ce mois-ci')}${tile(m.last?m.c+' j':'–','cycle moyen')}${tile(sy||'–','symptôme le plus fréquent')}${tile(mo?mood(mo):'–','humeur la plus fréquente')}</div><p style="margin:12px 0 0;font-size:.82rem;opacity:.9">📸 Fais une capture d’écran pour partager ton bilan.</p></div>`}
 var AH=[],busy=false;
-function aiRender(){var l=$('aiLog');l.innerHTML='';AH.forEach(function(x){var d=document.createElement('div');d.className='bub '+(x.r==='user'?'u':'a');d.textContent=x.t;l.appendChild(d)});if(AH.length>1)window.scrollTo(0,document.body.scrollHeight)}
+function aiRender(){var l=$('aiLog');l.innerHTML='';AH.forEach(function(x){var d=document.createElement('div');d.className='bub '+(x.r==='user'?'u':'a');if(x.p&&!x.t)d.innerHTML='<span class="tp"><i></i><i></i><i></i></span>';else d.textContent=x.t;l.appendChild(d)});if(AH.length>1)window.scrollTo(0,document.body.scrollHeight)}
 function aiView(){var ok=!!S.aiok;$('aiNotice').hidden=ok;$('aiChat').hidden=!ok;
  if(ok&&!AH.length){AH.push({r:'assistant',g:true,t:'Bonjour ! Je suis l’assistante Lunéa. Pose-moi tes questions sur le cycle, les règles ou l’ovulation. Je ne remplace pas un professionnel de santé.'});aiRender()}}
 function aiSend(txt){txt=(txt||$('aiIn').value).trim();if(!txt||busy)return;txt=txt.slice(0,600);$('aiIn').value='';
- AH.push({r:'user',t:txt});AH.push({r:'assistant',p:true,t:'…'});aiRender();busy=true;
+ AH.push({r:'user',t:txt});var bub={r:'assistant',p:true,t:''};AH.push(bub);aiRender();busy=true;
  var msgs=AH.filter(function(x){return !x.g&&!x.p&&!x.e}).slice(-10).map(function(x){return {role:x.r==='user'?'user':'assistant',content:x.t}});
  fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:msgs})})
- .then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j}})})
- .then(function(x){AH.pop();if(x.ok&&x.j.reply)AH.push({r:'assistant',t:x.j.reply});else AH.push({r:'assistant',e:true,t:x.j.error||'Je n’ai pas pu répondre. Réessaie dans un instant.'})})
- .catch(function(){AH.pop();AH.push({r:'assistant',e:true,t:'Impossible de joindre l’assistante. Vérifie ta connexion et réessaie.'})})
+ .then(function(r){
+  var ct=r.headers.get('content-type')||'';
+  if(!r.ok||ct.indexOf('application/json')>=0){return r.json().then(function(j){bub.p=false;if(j.reply)bub.t=j.reply;else{bub.e=true;bub.t=j.error||'Je n’ai pas pu répondre. Réessaie dans un instant.'}})}
+  if(!r.body||!r.body.getReader){return r.text().then(function(t){bub.p=false;bub.t=t})}
+  var rd=r.body.getReader(),dec=new TextDecoder();
+  function pump(){return rd.read().then(function(x){
+   if(x.done){bub.p=false;if(!bub.t.trim()){bub.e=true;bub.t='Je ne peux pas répondre à cette question. Parles-en à un professionnel de santé.'}return}
+   bub.t+=dec.decode(x.value,{stream:true});aiRender();return pump()})}
+  return pump()})
+ .catch(function(){bub.p=false;if(!bub.t){bub.e=true;bub.t='Impossible de joindre l’assistante. Vérifie ta connexion et réessaie.'}})
  .then(function(){busy=false;aiRender()})}
 $('aiOk').onclick=function(){S.aiok=true;save();aiView()};
 $('aiSend').onclick=function(){aiSend()};
