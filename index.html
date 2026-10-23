@@ -17,7 +17,7 @@ box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:en
 :root[data-theme="dark"]{--bg:#150A26;--surface:#22123E;--ink:#F3ECFF;--muted:#B5A6D4;--line:#3A2860;--m:#FF5B75;--o:#FFC247;--l:#B68AF5}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 var(--bd)}
+body{margin:0;background:var(--bg) linear-gradient(180deg,color-mix(in srgb,var(--ph1,transparent) 14%,transparent),transparent 380px) no-repeat;color:var(--ink);font:16px/1.55 var(--bd)}
 .wrap{max-width:520px;margin:0 auto;padding:0 16px 130px}
 h1,h2,h3{font-family:var(--hd);margin:0;line-height:1.1}
 header{position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);z-index:5;padding:12px 0 8px}
@@ -31,7 +31,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .tabs button[aria-selected=true]{background:var(--ink);color:var(--bg)}
 button:focus-visible,summary:focus-visible,input:focus-visible{outline:3px solid var(--l);outline-offset:2px}
 .card{background:var(--surface);border-radius:24px;padding:20px;margin:12px 0}
-.hero{display:flex;gap:16px;align-items:center;justify-content:space-between;background:linear-gradient(135deg,var(--m),var(--l));color:#fff;border:0}
+.hero{display:flex;gap:16px;align-items:center;justify-content:space-between;background:linear-gradient(135deg,var(--ph1,var(--m)),var(--ph2,var(--l)));color:#fff;border:0}
 .hero b{font:800 2.6rem/1 var(--hd);display:block}
 .hero small{opacity:.9;font-size:.9rem}
 .hero .r{text-align:right;font-size:.95rem}
@@ -133,6 +133,43 @@ textarea.inp{resize:vertical;line-height:1.5}
 .aibar button{border:0;background:var(--m);color:#fff;border-radius:16px;width:48px;font-size:1.1rem;cursor:pointer}
 .tp{display:inline-flex;gap:4px;padding:4px 0}.tp i{width:7px;height:7px;border-radius:50%;background:var(--muted);animation:tpb 1s infinite}.tp i:nth-child(2){animation-delay:.15s}.tp i:nth-child(3){animation-delay:.3s}
 @keyframes tpb{0%,60%,100%{opacity:.3;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
+.av{position:relative;display:inline-block;animation:avf 3.4s ease-in-out infinite}
+.av.st{animation:none}
+.av .avf{display:block}
+.avm{position:absolute;top:-4%;right:-8%;transform-origin:30% 80%;animation:sway 5s ease-in-out infinite alternate}
+.av .eye{transform-box:fill-box;transform-origin:center;animation:blink 4.6s infinite}
+.av.st .eye,.av.st .avm{animation:none}
+.mtk{display:none;transform-box:fill-box;transform-origin:center}
+.av.talk .msm{display:none}.av.talk .mtk{display:block;animation:talk .32s ease-in-out infinite alternate}
+.av.think .avf{animation:tilt 1.6s ease-in-out infinite;transform-origin:50% 90%}
+.av.think .eye{animation:look 1.4s ease-in-out infinite}
+.tdots{position:absolute;top:-8%;left:50%;transform:translateX(-50%);display:none;gap:4px}
+.av.think .tdots{display:flex}
+.tdots i{width:6px;height:6px;border-radius:50%;background:var(--l);animation:tpb 1s infinite}.tdots i:nth-child(2){animation-delay:.15s}.tdots i:nth-child(3){animation-delay:.3s}
+.sp{position:absolute;font-size:12px;color:var(--o);animation:tw 2.4s ease-in-out infinite}
+.sp.s1{left:-6%;top:12%}.sp.s2{right:-10%;bottom:14%;animation-delay:1.1s}
+.av.hop{animation:hop .6s ease}
+#aiAv{cursor:pointer}
+.arow{display:flex;gap:8px;align-items:flex-end;align-self:flex-start;max-width:94%}.arow .bub{align-self:auto;max-width:none}.mini{flex:none;line-height:0}
+@keyframes avf{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+@keyframes sway{from{transform:rotate(-8deg)}to{transform:rotate(8deg)}}
+@keyframes blink{0%,92%,100%{transform:scaleY(1)}95%{transform:scaleY(.1)}}
+@keyframes talk{from{transform:scaleY(.35)}to{transform:scaleY(1.1)}}
+@keyframes tilt{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(4deg)}}
+@keyframes look{0%,100%{transform:translateX(-2px)}50%{transform:translateX(2px)}}
+@keyframes tw{0%,100%{opacity:.2;transform:scale(.7)}50%{opacity:1;transform:scale(1.1)}}
+@keyframes hop{0%,100%{transform:translateY(0)}30%{transform:translateY(-14px) scale(1.05)}60%{transform:translateY(0) scale(.97,1.03)}}
+@media (prefers-reduced-motion:reduce){.av,.av *{animation:none!important}}
+.hi{display:flex;align-items:center;gap:10px}.hi .sp,.hi .tdots{display:none!important}
+.av .mad,.av .mbg,.av .mfl,.av .brw,.av .eyh,.av .tr,.av .zz{display:none}
+.av.m-r .msm,.av.m-f .msm,.av.m-o .msm,.av.m-l .msm{display:none}
+.av.m-r .mad,.av.m-r .brw{display:inline}.av.m-r .tr{display:inline;animation:tear 2.4s ease-in infinite}.av.m-r .chk{opacity:.3}
+.av.m-f .mbg{display:inline}
+.av.m-o .mbg,.av.m-o .eyh{display:inline}.av.m-o .eye,.av.m-o .hl{display:none}
+.av.m-l .mfl,.av.m-l .zz{display:inline}.av.m-l .eye{animation:none;transform:scaleY(.5)}.av.m-l .zz{animation:zz 2.2s ease-in-out infinite}
+.av.talk .msm,.av.talk .mad,.av.talk .mbg,.av.talk .mfl{display:none}
+@keyframes tear{0%{transform:translateY(-4px);opacity:0}30%{opacity:1}100%{transform:translateY(9px);opacity:0}}
+@keyframes zz{0%{opacity:0;transform:translate(0,6px)}50%{opacity:1}100%{opacity:0;transform:translate(6px,-8px)}}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -157,7 +194,7 @@ textarea.inp{resize:vertical;line-height:1.5}
   <details class="card set" style="margin-top:28px"><summary>Réglages</summary>
     <label style="display:block;font-weight:600;margin-bottom:6px;font-size:.9rem">Apparence</label><div style="margin-bottom:12px"><button class="ghost" data-th="auto">Auto</button><button class="ghost" data-th="light">Clair</button><button class="ghost" data-th="dark">Sombre</button></div>
     <label style="display:block;font-weight:600;margin-bottom:6px;font-size:.9rem">Couleurs</label><div style="margin-bottom:12px"><button class="ghost" data-pal="rose">Rose</button><button class="ghost" data-pal="ocean">Océan</button><button class="ghost" data-pal="forest">Forêt</button><button class="ghost" data-pal="lavender">Lavande</button><button class="ghost" data-pal="sun">Soleil</button></div>
-    <div style="margin-bottom:12px"><button class="ghost" id="smp">Mode découverte</button></div>
+    <div style="margin-bottom:12px"><button class="ghost" id="smp">Mode découverte</button><button class="ghost" id="mdb">Ambiance</button></div>
     <div class="row"><div><label for="cyc">Durée du cycle</label><input type="number" id="cyc" min="21" max="45"></div>
     <div><label for="per">Durée des règles</label><input type="number" id="per" min="2" max="10"></div></div>
     <p class="note">Ces valeurs servent tant que tu n’as pas renseigné deux cycles. Ensuite, la moyenne de tes propres cycles prend le relais.</p>
@@ -198,7 +235,8 @@ textarea.inp{resize:vertical;line-height:1.5}
 </section>
 
 <section id="ai" hidden>
-  <h2 class="t">Lunéa IA</h2>
+  <div id="aiAv" style="text-align:center;margin-top:10px" aria-label="Avatar de Lunéa"></div>
+  <h2 class="t" style="text-align:center;margin-top:6px">Lunéa IA</h2>
   <div class="card" id="aiNotice"><b>Avant de commencer</b><p class="note" style="margin:6px 0 10px">Cette assistante utilise une IA de Google. Tes messages sont envoyés à Google et peuvent être utilisés pour améliorer ses produits. N’écris pas d’informations qui t’identifient (nom, adresse, école…). Elle ne voit pas tes données de suivi. Elle donne des informations générales, peut se tromper et ne remplace pas un médecin. En urgence, appelle le 15 ou le 112.</p><button class="cta" id="aiOk">J’ai compris, continuer</button></div>
   <div id="aiChat" hidden>
     <div class="chips" id="aiQs"><button class="chip" data-q="Pourquoi mes règles peuvent-elles être en retard ?">Règles en retard</button><button class="chip" data-q="Comment soulager les crampes de règles ?">Crampes</button><button class="chip" data-q="Mon cycle est-il normal ?">Cycle normal ?</button><button class="chip" data-q="C’est quoi l’ovulation ?">Ovulation</button></div>
@@ -295,11 +333,11 @@ function hero(m){
   if(S.g==='conceive'&&fz)ovLine+='<br><b>Fenêtre favorable pour concevoir.</b>';
   var fd=Math.max(m.c-19-m.p,0),P2=S.simple?[[m.p,'#FF9FB0'],[Math.max(m.c-m.p-12,0),'#9CB4FF'],[12,'#D3B5FF']]:[[m.p,'#FF9FB0'],[fd,'#9CB4FF'],[7,'#FFD166'],[12,'#D3B5FF']];
   var bar='<div class="cbar">'+P2.filter(function(x){return x[0]>0}).map(function(x){return '<span style="flex:'+x[0]+';background:'+x[1]+'"></span>'}).join('')+'<i style="left:'+Math.min(100,Math.max(0,(Math.min(day,m.c)-.5)/m.c*100))+'%"></i></div>';
-  h.innerHTML='<div><b>Jour '+day+'</b><small>'+ph+'</small></div><div class="r">'+right+ovLine+'</div>'+bar;
+  h.innerHTML='<div><b>Jour '+day+'</b><small>'+(CURE?CURE+' ':'')+ph+'</small></div><div class="r">'+right+ovLine+'</div>'+bar;
 }
 
 function render(){
-  var m=model();theme(S.theme);pal(S.pal);hero(m);var pk=phaseAt(m,today);$('tip').textContent=pk?'💡 '+ADV[pk][1]:'';$('hi').textContent=greet();var ls=document.querySelectorAll('.legend span');if(ls[3]){ls[2].hidden=ls[3].hidden=!!S.simple}$('smp').textContent='Mode découverte : '+(S.simple?'activé':'désactivé');$('lgF').textContent=S.g==='avoid'?'Risque élevé':S.g==='conceive'?'Favorable':'Fertile';
+  var m=model();theme(S.theme);pal(S.pal);var pk=phaseAt(m,today);applyMood(pk);hero(m);$('tip').textContent=pk?TONE[pk]+ADV[pk][1]:'';$('hi').innerHTML=avatar(40,'hv',0,AVM)+'<span id="hit"></span>';$('hit').textContent=greet();var ls=document.querySelectorAll('.legend span');if(ls[3]){ls[2].hidden=ls[3].hidden=!!S.simple}$('smp').textContent='Mode découverte : '+(S.simple?'activé':'désactivé');$('mdb').textContent='Ambiance selon la phase : '+(S.mood===false?'désactivée':'activée');$('lgF').textContent=S.g==='avoid'?'Risque élevé':S.g==='conceive'?'Favorable':'Fertile';
   var L={};S.logged.forEach(function(k){L[k]=1});
   var html='',start=new Date(today.getFullYear(),today.getMonth()-2,1);
   for(var i=0;i<15;i++){
@@ -376,13 +414,25 @@ function recap(){
  function top(o){return Object.keys(o).sort(function(a,b){return o[b]-o[a]})[0]}
  var m=model(),sy=top(cnt),mo=top(md);
  function tile(v,l){return `<div style="background:rgba(255,255,255,.18);border-radius:14px;padding:10px"><b style="font:800 1.25rem var(--hd);display:block">${v}</b><span style="font-size:.8rem">${l}</span></div>`}
- return `<div class="card" style="background:linear-gradient(135deg,var(--m),var(--l));color:#fff;border:0"><div style="display:flex;align-items:center;gap:8px">${logo(26,'lgr')}<b style="font:800 1.1rem var(--hd)">Lunéa</b></div><h3 style="margin:14px 0 10px;text-transform:capitalize;font-size:1.5rem">${mon}</h3><div class="stat" style="gap:8px">${tile(days+' j','de règles ce mois-ci')}${tile(m.last?m.c+' j':'–','cycle moyen')}${tile(sy||'–','symptôme le plus fréquent')}${tile(mo?mood(mo):'–','humeur la plus fréquente')}</div><p style="margin:12px 0 0;font-size:.82rem;opacity:.9">📸 Fais une capture d’écran pour partager ton bilan.</p></div>`}
+ return `<div class="card" style="background:linear-gradient(135deg,var(--ph1,var(--m)),var(--ph2,var(--l)));color:#fff;border:0"><div style="display:flex;align-items:center;gap:8px">${logo(26,'lgr')}<b style="font:800 1.1rem var(--hd)">Lunéa</b></div><h3 style="margin:14px 0 10px;text-transform:capitalize;font-size:1.5rem">${mon}</h3><div class="stat" style="gap:8px">${tile(days+' j','de règles ce mois-ci')}${tile(m.last?m.c+' j':'–','cycle moyen')}${tile(sy||'–','symptôme le plus fréquent')}${tile(mo?mood(mo):'–','humeur la plus fréquente')}</div><p style="margin:12px 0 0;font-size:.82rem;opacity:.9">📸 Fais une capture d’écran pour partager ton bilan.</p></div>`}
+var TH={r:['#E5334F','#9B1239','🩸'],f:['#5B7CFA','#18A0AB','🌱'],o:['#E08A00','#FF6F59','☀️'],l:['#8B4FD9','#4F3AA6','🌙']};
+var TONE={r:'Doucement 💗 ',f:'Plein d’énergie ✨ ',o:'Tu rayonnes ☀️ ',l:'Écoute-toi 🌙 '},AVM='0',CURE='';
+function applyMood(pk){var r=document.documentElement.style;if(pk==='o'&&S.simple)pk='f';
+ if(S.mood===false||!pk||!TH[pk]){AVM='0';CURE='';r.removeProperty('--ph1');r.removeProperty('--ph2');return}
+ AVM=pk;CURE=TH[pk][2];r.setProperty('--ph1',TH[pk][0]);r.setProperty('--ph2',TH[pk][1])}
+$('mdb').onclick=function(){S.mood=(S.mood===false);save();render()};
+function avatar(sz,id,st,mood){return `<span class="av m-${mood||'0'}${st?' st':''}" style="width:${sz}px;height:${sz}px"><span class="avm">${logo(Math.round(sz*.38),id+'c')}</span><svg class="avf" viewBox="0 0 100 100" width="${sz}" height="${sz}" aria-hidden="true"><defs><radialGradient id="${id}g" cx="40%" cy="35%" r="75%"><stop offset="0" stop-color="#FFF1F6"/><stop offset="1" stop-color="#CDB4FF"/></radialGradient></defs><circle cx="50" cy="56" r="34" fill="url(#${id}g)"/><ellipse class="eye" cx="38" cy="54" rx="4" ry="5.5" fill="#24103F"/><ellipse class="eye" cx="62" cy="54" rx="4" ry="5.5" fill="#24103F"/><circle class="hl" cx="36.6" cy="52" r="1.5" fill="#fff"/><circle class="hl" cx="60.6" cy="52" r="1.5" fill="#fff"/><path class="eyh" d="M33 57 Q38 49 43 57 M57 57 Q62 49 67 57" stroke="#24103F" stroke-width="3" fill="none" stroke-linecap="round"/><path class="brw" d="M31 47 L45 42 M69 47 L55 42" stroke="#24103F" stroke-width="2.4" stroke-linecap="round" fill="none"/><ellipse class="chk" cx="29" cy="65" rx="5" ry="3" fill="#FF9FB0" opacity=".75"/><ellipse class="chk" cx="71" cy="65" rx="5" ry="3" fill="#FF9FB0" opacity=".75"/><ellipse class="tr" cx="31" cy="62" rx="2" ry="3" fill="#8EC9FF"/><path class="msm" d="M43 67 Q50 74 57 67" stroke="#24103F" stroke-width="2.6" fill="none" stroke-linecap="round"/><path class="mad" d="M43 72 Q50 65 57 72" stroke="#24103F" stroke-width="2.6" fill="none" stroke-linecap="round"/><path class="mbg" d="M40 64 Q50 80 60 64 Z" fill="#fff" stroke="#24103F" stroke-width="2.4" stroke-linejoin="round"/><path class="mfl" d="M44 69 Q50 71 56 69" stroke="#24103F" stroke-width="2.6" fill="none" stroke-linecap="round"/><ellipse class="mtk" cx="50" cy="69" rx="5" ry="4" fill="#24103F"/><text class="zz" x="70" y="34" font-size="15" font-weight="700" fill="#8B4FD9">z</text></svg>${st?'':'<span class="tdots"><i></i><i></i><i></i></span><span class="sp s1">✨</span><span class="sp s2">✦</span>'}</span>`}
+function avState(t){var a=$('aiAv').firstChild;if(a)a.className='av m-'+AVM+(t?' '+t:'')}
+$('aiAv').addEventListener('click',function(e){var a=$('aiAv').firstChild;if(!a)return;a.classList.add('hop');setTimeout(function(){a.classList.remove('hop')},650);burst(e.clientX,e.clientY)});
 var AH=[],busy=false;
-function aiRender(){var l=$('aiLog');l.innerHTML='';AH.forEach(function(x){var d=document.createElement('div');d.className='bub '+(x.r==='user'?'u':'a');if(x.p&&!x.t)d.innerHTML='<span class="tp"><i></i><i></i><i></i></span>';else d.textContent=x.t;l.appendChild(d)});if(AH.length>1)window.scrollTo(0,document.body.scrollHeight)}
-function aiView(){var ok=!!S.aiok;$('aiNotice').hidden=ok;$('aiChat').hidden=!ok;
+function aiRender(){var l=$('aiLog');l.innerHTML='';AH.forEach(function(x,i){var d=document.createElement('div');d.className='bub '+(x.r==='user'?'u':'a');
+ if(x.p&&!x.t)d.innerHTML='<span class="tp"><i></i><i></i><i></i></span>';else d.textContent=x.t;
+ if(x.r==='user'){l.appendChild(d)}else{var row=document.createElement('div');row.className='arow';row.innerHTML='<span class="mini">'+avatar(30,'mi'+i,1,AVM)+'</span>';row.appendChild(d);l.appendChild(row)}});
+ if(AH.length>1)window.scrollTo(0,document.body.scrollHeight)}
+function aiView(){$('aiAv').innerHTML=avatar(96,'ah',0,AVM);var ok=!!S.aiok;$('aiNotice').hidden=ok;$('aiChat').hidden=!ok;
  if(ok&&!AH.length){AH.push({r:'assistant',g:true,t:'Bonjour ! Je suis l’assistante Lunéa. Pose-moi tes questions sur le cycle, les règles ou l’ovulation. Je ne remplace pas un professionnel de santé.'});aiRender()}}
 function aiSend(txt){txt=(txt||$('aiIn').value).trim();if(!txt||busy)return;txt=txt.slice(0,600);$('aiIn').value='';
- AH.push({r:'user',t:txt});var bub={r:'assistant',p:true,t:''};AH.push(bub);aiRender();busy=true;
+ AH.push({r:'user',t:txt});var bub={r:'assistant',p:true,t:''};AH.push(bub);aiRender();busy=true;avState('think');
  var msgs=AH.filter(function(x){return !x.g&&!x.p&&!x.e}).slice(-10).map(function(x){return {role:x.r==='user'?'user':'assistant',content:x.t}});
  fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:msgs})})
  .then(function(r){
@@ -392,10 +442,10 @@ function aiSend(txt){txt=(txt||$('aiIn').value).trim();if(!txt||busy)return;txt=
   var rd=r.body.getReader(),dec=new TextDecoder();
   function pump(){return rd.read().then(function(x){
    if(x.done){bub.p=false;if(!bub.t.trim()){bub.e=true;bub.t='Je ne peux pas répondre à cette question. Parles-en à un professionnel de santé.'}return}
-   bub.t+=dec.decode(x.value,{stream:true});aiRender();return pump()})}
+   bub.t+=dec.decode(x.value,{stream:true});avState('talk');aiRender();return pump()})}
   return pump()})
  .catch(function(){bub.p=false;if(!bub.t){bub.e=true;bub.t='Impossible de joindre l’assistante. Vérifie ta connexion et réessaie.'}})
- .then(function(){busy=false;aiRender()})}
+ .then(function(){busy=false;aiRender();avState('')})}
 $('aiOk').onclick=function(){S.aiok=true;save();aiView()};
 $('aiSend').onclick=function(){aiSend()};
 $('aiIn').addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();aiSend()}});
