@@ -198,6 +198,7 @@ textarea.inp{resize:vertical;line-height:1.5}
     <div class="row"><div><label for="cyc">Durée du cycle</label><input type="number" id="cyc" min="21" max="45"></div>
     <div><label for="per">Durée des règles</label><input type="number" id="per" min="2" max="10"></div></div>
     <p class="note">Ces valeurs servent tant que tu n’as pas renseigné deux cycles. Ensuite, la moyenne de tes propres cycles prend le relais.</p>
+    <div id="pwbox" hidden style="margin:8px 0 12px"><label style="display:block;font-weight:600;margin-bottom:6px;font-size:.9rem">Mot de passe du compte</label><input type="password" id="pw1" name="password" autocomplete="new-password" placeholder="Nouveau mot de passe (8 caractères min.)" style="margin-bottom:8px"><button class="ghost" id="pwb">Définir mon mot de passe</button><p class="note" id="pwm"></p></div>
     <button class="ghost" id="redo">Refaire le questionnaire</button> <button class="ghost" id="rtu">Revoir le tutoriel</button> <button class="ghost" id="pinb">Code secret</button> <button class="ghost" id="outb">Se déconnecter</button> <button class="ghost" id="clear">Effacer mes données</button>
     <p class="note" style="margin-top:10px">Tes données restent sur cet appareil. Les prévisions sont des estimations et ne remplacent ni un avis médical ni une contraception.</p>
   </details>
@@ -639,18 +640,46 @@ $('onb').addEventListener('click',function(e){
 $('redo').addEventListener('click',function(){A=0;step()});
 $('rtu').addEventListener('click',function(){tuto(0)});
 render();
-var cfg=window.LUNEA||{},sb=null,pt=null;
+var cfg=window.LUNEA||{},sb=null,pt=null,GO=null,RECOV=/type=recovery/.test(location.hash);
 if(window.supabase&&cfg.url&&cfg.key)sb=supabase.createClient(cfg.url,cfg.key);
 function DEF(){return {logged:[],c:28,p:5,v:'ok',name:'',done:false,g:'track',log:{}}}
 function push(){if(!sb)return;clearTimeout(pt);pt=setTimeout(function(){sb.auth.getUser().then(function(r){var u=r.data&&r.data.user;if(!u)return;sb.from('lunea_data').upsert({user_id:u.id,data:S,updated_at:new Date().toISOString()}).then(function(x){if(x.error)console.error(x.error)})})},800)}
-function showAuth(msg){var o=$('auth');o.hidden=false;
- o.innerHTML=`<div class="lk" style="max-width:360px">${logo(56,'lga2')}<div class="wm">Lunéa</div><p class="note">Connecte-toi pour retrouver tes données sur tous tes appareils.</p><input class="inp" id="aem" type="email" autocomplete="email" inputmode="email" placeholder="ton@email.com"><button class="cta" id="abtn">Recevoir mon lien de connexion</button><p class="note" id="amsg" aria-live="polite">${msg||''}</p></div>`;
- $('abtn').onclick=function(){var em=$('aem').value.trim();
-  if(!/^\S+@\S+\.\S+$/.test(em)){$('amsg').textContent='Entre une adresse e-mail valide.';return}
+var AMODE='in';
+function showAuth(msg){var o=$('auth');o.hidden=false;var up=AMODE==='up';
+ o.innerHTML=`<form class="lk" id="af" style="max-width:360px" novalidate>${logo(56,'lga2')}<div class="wm">Lunéa</div>
+ <div class="chips" style="justify-content:center;margin:10px 0 6px"><button type="button" class="chip" data-m="in" aria-pressed="${!up}">Se connecter</button><button type="button" class="chip" data-m="up" aria-pressed="${up}">Créer un compte</button></div>
+ <input class="inp" id="aem" type="email" name="email" autocomplete="username" inputmode="email" placeholder="ton@email.com">
+ <input class="inp" id="apw" type="password" name="password" autocomplete="${up?'new-password':'current-password'}" placeholder="${up?'Choisis un mot de passe (8 caractères min.)':'Mot de passe'}">
+ <button class="cta" id="abtn" type="submit">${up?'Créer mon compte':'Se connecter'}</button>
+ <button type="button" class="ghost" id="afg" style="${up?'display:none':''}">Mot de passe oublié ?</button> <button type="button" class="ghost" id="aml">Recevoir un lien par e-mail</button>
+ <p class="note" id="amsg" aria-live="polite"></p></form>`;
+ var say=function(t){$('amsg').textContent=t},em=function(){return $('aem').value.trim()},ok=function(x){return /^\S+@\S+\.\S+$/.test(x)};
+ say(msg||'');
+ o.querySelectorAll('[data-m]').forEach(function(b){b.onclick=function(){var keep=em();AMODE=b.dataset.m;showAuth();$('aem').value=keep}});
+ $('af').onsubmit=function(e){e.preventDefault();var e1=em(),pw=$('apw').value;
+  if(!ok(e1)){say('Entre une adresse e-mail valide.');return}
+  if(pw.length<(up?8:1)){say(up?'Choisis un mot de passe de 8 caractères minimum.':'Entre ton mot de passe.');return}
   $('abtn').disabled=true;
-  sb.auth.signInWithOtp({email:em,options:{emailRedirectTo:location.origin+location.pathname}}).then(function(r){
-   $('abtn').disabled=false;
-   $('amsg').textContent=r.error?'Impossible d’envoyer le lien. Réessaie dans un instant.':'C’est envoyé ! Ouvre l’e-mail et touche le lien pour te connecter.'})}}
+  var pr=up?sb.auth.signUp({email:e1,password:pw,options:{emailRedirectTo:location.origin+location.pathname}}):sb.auth.signInWithPassword({email:e1,password:pw});
+  pr.then(function(r){$('abtn').disabled=false;
+   if(r.error){var m=r.error.message||'';say(/invalid login/i.test(m)?'E-mail ou mot de passe incorrect. Si tu t’es connectée avec un lien par e-mail, touche « Mot de passe oublié ? » pour en créer un.':/not confirmed/i.test(m)?'Confirme d’abord ton adresse avec l’e-mail que tu as reçu.':/at least|weak|short/i.test(m)?'Mot de passe trop faible : 8 caractères minimum.':'Une erreur est survenue. Réessaie dans un instant.');return}
+   if(up){var u=r.data&&r.data.user;
+    if(u&&u.identities&&u.identities.length===0){say('Cette adresse a déjà un compte. Connecte-toi, ou touche « Mot de passe oublié ? ».');return}
+    if(!(r.data&&r.data.session))say('Compte créé ! Ouvre l’e-mail de confirmation pour l’activer, puis reviens te connecter.')}
+  },function(){$('abtn').disabled=false;say('Connexion impossible. Vérifie ton réseau.')})};
+ $('afg').onclick=function(){var e1=em();if(!ok(e1)){say('Entre d’abord ton adresse e-mail ci-dessus.');return}
+  sb.auth.resetPasswordForEmail(e1,{redirectTo:location.origin+location.pathname}).then(function(r){say(r.error?'Impossible d’envoyer l’e-mail. Réessaie dans un instant.':'Si un compte existe pour cette adresse, un e-mail vient d’être envoyé.')})};
+ $('aml').onclick=function(){var e1=em();if(!ok(e1)){say('Entre d’abord ton adresse e-mail ci-dessus.');return}
+  sb.auth.signInWithOtp({email:e1,options:{emailRedirectTo:location.origin+location.pathname}}).then(function(r){say(r.error?'Impossible d’envoyer le lien. Réessaie dans un instant.':'C’est envoyé ! Ouvre l’e-mail et touche le lien pour te connecter.')})};
+}
+function showNewPw(){var o=$('auth');o.hidden=false;
+ o.innerHTML=`<form class="lk" id="nf" style="max-width:360px">${logo(56,'lga3')}<div class="wm">Lunéa</div><h2 style="font-size:1.3rem;margin:10px 0">Nouveau mot de passe</h2><input class="inp" id="npw" type="password" name="password" autocomplete="new-password" placeholder="8 caractères minimum"><button class="cta" type="submit">Enregistrer</button><p class="note" id="nmsg" aria-live="polite"></p></form>`;
+ $('nf').onsubmit=function(e){e.preventDefault();var v=$('npw').value;if(v.length<8){$('nmsg').textContent='8 caractères minimum.';return}
+  sb.auth.updateUser({password:v}).then(function(r){if(r.error){$('nmsg').textContent='Impossible d’enregistrer : '+r.error.message;return}
+   RECOV=false;try{history.replaceState(null,'',location.pathname)}catch(e){}
+   sb.auth.getSession().then(function(x){if(x.data.session&&GO)GO(x.data.session)})})}}
+$('pwb').onclick=function(){var v=$('pw1').value;if(v.length<8){$('pwm').textContent='8 caractères minimum.';return}
+ sb.auth.updateUser({password:v}).then(function(r){$('pwm').textContent=r.error?'Impossible d’enregistrer : '+r.error.message:'Mot de passe enregistré. Tu peux maintenant te connecter avec ton e-mail et ce mot de passe.';if(!r.error)$('pw1').value=''})};
 function loadRemote(uid){return sb.from('lunea_data').select('data').eq('user_id',uid).maybeSingle().then(function(r){
  if(r.error)throw r.error;var d=r.data&&r.data.data;
  if(d&&d.logged)S=Object.assign(DEF(),d);else{S=DEF();}
@@ -662,9 +691,9 @@ function authInit(){
  var started=false;
  var hp=new URLSearchParams(location.hash.replace(/^#/,'')),qp=new URLSearchParams(location.search),ec=hp.get('error_code')||qp.get('error_code'),ed=hp.get('error_description')||qp.get('error_description'),urlErr=null;
  if(ec==='otp_expired')urlErr='Ce lien a expiré ou a déjà été utilisé. Demande-en un nouveau.';else if(ed)urlErr='Le lien n’a pas fonctionné : '+ed.replace(/\+/g,' ')+'.';
- function go(session){if(started)return;if(!session){showAuth();return}started=true;$('auth').hidden=true;$('auth').innerHTML='';loadRemote(session.user.id).then(start,function(er){showAuth('Connecté, mais impossible de charger tes données : '+((er&&er.message)||'erreur')+'.')})}
- sb.auth.getSession().then(function(r){if(r.error){showAuth('Connexion impossible : '+r.error.message);return}if(!r.data.session&&urlErr){showAuth(urlErr);return}go(r.data.session)});
- sb.auth.onAuthStateChange(function(ev,s){if(ev==='SIGNED_IN'&&s)go(s)});
+ function go(session){if(started)return;if(!session){showAuth();return}if(RECOV){if(!$('npw'))showNewPw();return}started=true;$('pwbox').hidden=false;$('auth').hidden=true;$('auth').innerHTML='';loadRemote(session.user.id).then(start,function(er){showAuth('Connecté, mais impossible de charger tes données : '+((er&&er.message)||'erreur')+'.')})}
+ GO=go;sb.auth.getSession().then(function(r){if(r.error){showAuth('Connexion impossible : '+r.error.message);return}if(!r.data.session&&urlErr){showAuth(urlErr);return}go(r.data.session)});
+ sb.auth.onAuthStateChange(function(ev,s){if((ev==='SIGNED_IN'||ev==='PASSWORD_RECOVERY')&&s)go(s)});
 }
 $('outb').onclick=function(){if(!sb)return;sb.auth.signOut().then(function(){try{localStorage.removeItem('cycle-v2');localStorage.removeItem(LK)}catch(e){}location.reload()})};
 function start(){render();refreshPin();if(pinGet())lockScreen();
