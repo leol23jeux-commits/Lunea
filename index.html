@@ -320,7 +320,8 @@ body::after{display:none!important}
 .card.alert{border:1.5px solid color-mix(in srgb,var(--m) 75%,transparent)}
 details.card,.tip{-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
 .tip{background:color-mix(in srgb,var(--surface) 66%,transparent);border:1px solid var(--edge)}
-header{-webkit-backdrop-filter:blur(16px) saturate(140%);backdrop-filter:blur(16px) saturate(140%)}
+/* le flou est porté par un pseudo-élément : un backdrop-filter sur header ferait de lui le repère des éléments fixes (la barre d'onglets) */
+header::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;-webkit-backdrop-filter:blur(16px) saturate(140%);backdrop-filter:blur(16px) saturate(140%)}
 #hit{background:linear-gradient(90deg,var(--ink) 30%,color-mix(in srgb,var(--l) 65%,var(--ink)));-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent}
 .dial::before{content:"";position:absolute;inset:-5%;border-radius:50%;pointer-events:none;
  background:conic-gradient(from 0deg,var(--ph1,var(--m)),transparent 28%,var(--ph2,var(--l)),transparent 68%,var(--ph1,var(--m)));filter:blur(30px);opacity:.32;animation:spinr 20s linear infinite}
