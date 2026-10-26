@@ -808,15 +808,17 @@ function dayView(){
   if(e.t==='neg')tx+=' Si tes règles ne viennent pas, refais un test dans quelques jours : un test fait trop tôt peut être négatif à tort.';
   tx+=' En cas de doute ou si le retard se prolonge, parles-en à un professionnel de santé.';
   if(S.simple)tx='Retard de <b>'+late+' jour'+(late>1?'s':'')+'</b>. Les premières années, les cycles sont souvent irréguliers : c’est très courant. Si ça t’inquiète ou si ça dure, parles-en à un adulte de confiance, à l’infirmière scolaire ou à un médecin.';
-  $('tsh').hidden=!!S.simple;$('lateTxt').innerHTML=tx;$('ct').innerHTML=S.simple?'':chips(TS,e.t||'','t')}
+  $('tsh').hidden=!!S.simple;$('lateTxt').innerHTML=tx+'<br><button class="cta" id="lstart" style="margin-top:12px">Mes règles ont commencé le '+fmt(parse(k))+'</button>';$('ct').innerHTML=S.simple?'':chips(TS,e.t||'','t')}
  $('nt').value=e.n||'';
 }
 $('day').addEventListener('click',function(e){
  var b=e.target.closest('.chip');if(!b)return;
  var k=$('dd').value||key(today),en=S.log[k]||(S.log[k]={s:[],m:'',f:''}),t=b.dataset.t,v=b.dataset.v;
- if(t==='s'){var i=en.s.indexOf(v);if(i>=0)en.s.splice(i,1);else en.s.push(v)}else en[t]=en[t]===v?'':v;
+ if(t==='s'){var i=en.s.indexOf(v);if(i>=0)en.s.splice(i,1);else en.s.push(v)}else{en[t]=en[t]===v?'':v;if(t==='f'&&en.f&&lateDays(model(),parse(k))>0){startAt(k);render();toast('Début des règles noté')}}
  save();dayView();
 });
+function startAt(k){var dt=parse(k);if(S.logged.indexOf(key(add(dt,-1)))>=0)return;var n=model().p;for(var j=0;j<n;j++){var d2=add(dt,j);if(diff(d2,today)>0)break;var k2=key(d2);if(S.logged.indexOf(k2)<0)S.logged.push(k2)}}
+document.addEventListener('click',function(e){if(e.target.closest('#lstart')){startAt($('dd').value||key(today));save();render();dayView();toast('Règles notées : tes prévisions sont décalées')}});
 $('dd').max=key(today);$('dd').value=key(today);$('dd').addEventListener('change',dayView);
 function shift(n){var d=add(parse($('dd').value||key(today)),n);if(diff(d,today)>0)return;$('dd').value=key(d);dayView()}
 $('dp').onclick=function(){shift(-1)};$('dn').onclick=function(){shift(1)};
