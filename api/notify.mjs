@@ -41,6 +41,19 @@ function encrypt(sub, text) {
   return Buffer.concat([hdr, asPub, ct]);
 }
 
+const MSG = [
+  ['Comment s’est passée ta journée ? 🌙', 'Prends 10 secondes pour la noter.', '/#jour'],
+  ['Le savais-tu ? 📖', 'Un cycle de 21 à 35 jours est considéré comme normal.', '/#guide'],
+  ['Un petit point sur toi 💜', 'Comment tu te sens ce soir ?', '/#jour'],
+  ['Le savais-tu ? 📖', 'Bouger un peu peut soulager les crampes.', '/#guide'],
+  ['Qu’est-ce qui t’a fait du bien aujourd’hui ? ✨', 'Écris-le dans ta note du jour.', '/#jour'],
+  ['Le savais-tu ? 📖', 'Le fer (lentilles, épinards) aide pendant les règles.', '/#guide'],
+  ['Une petite victoire aujourd’hui ? 🌟', 'Même toute petite, note-la.', '/#jour'],
+  ['Le savais-tu ? 📖', 'Les premières années, les cycles sont souvent irréguliers : c’est courant.', '/#guide'],
+  ['Hydratée, reposée ? 💧', 'Dis à Lunéa comment tu vas ce soir.', '/#jour'],
+  ['Teste ta culture cycle 🧠', 'Un quiz vrai ou faux t’attend dans le Guide.', '/#guide']
+];
+
 export default async function handler(req, res) {
   const E = process.env;
   if (!E.CRON_SECRET || req.headers.authorization !== 'Bearer ' + E.CRON_SECRET) return res.status(401).end();
@@ -51,10 +64,11 @@ export default async function handler(req, res) {
   const now = new Date(), today = paris(now), tomorrow = paris(new Date(now.getTime() + 864e5));
   const H = { apikey: E.SUPABASE_SERVICE_KEY, Authorization: 'Bearer ' + E.SUPABASE_SERVICE_KEY, 'Content-Type': 'application/json' };
 
-  const r = await fetch(E.SUPABASE_URL + '/rest/v1/push_subs?next_date=eq.' + tomorrow + '&select=user_id,sub,last_sent', { headers: H });
+  const r = await fetch(E.SUPABASE_URL + '/rest/v1/push_subs?or=(next_date.eq.' + tomorrow + ',daily.eq.true)&select=user_id,sub,last_sent,next_date,daily', { headers: H });
   if (!r.ok) return res.status(500).json({ error: 'Lecture Supabase impossible', status: r.status });
   const rows = await r.json();
 
+  const m = MSG[Math.floor(now.getTime() / 864e5) % MSG.length];
   let sent = 0, removed = 0, failed = 0;
   for (const row of rows) {
     if (row.last_sent === today) continue;
@@ -68,7 +82,9 @@ export default async function handler(req, res) {
           Urgency: 'normal',
           Authorization: vapidAuth(row.sub.endpoint)
         },
-        body: encrypt(row.sub, JSON.stringify({ title: 'Lunéa 🌙', body: 'Tes règles sont prévues demain. Pense à tes protections 💗' }))
+        body: encrypt(row.sub, JSON.stringify(row.next_date === tomorrow
+          ? { title: 'Lunéa 🌙', body: 'Tes règles sont prévues demain. Pense à tes protections 💗', url: '/' }
+          : { title: m[0], body: m[1], url: m[2] }))
       });
       const q = 'user_id=eq.' + row.user_id;
       if (p.status === 404 || p.status === 410) {
