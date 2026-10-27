@@ -428,7 +428,7 @@ header::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:no
     <div><label for="per">Durée des règles</label><input type="number" id="per" min="2" max="10"></div></div>
     <p class="note">Ces valeurs servent tant que tu n’as pas renseigné deux cycles. Ensuite, la moyenne de tes propres cycles prend le relais.</p>
     <div id="pwbox" hidden style="margin:8px 0 12px"><label style="display:block;font-weight:600;margin-bottom:6px;font-size:.9rem">Mot de passe du compte</label><input type="password" id="pw1" name="password" autocomplete="new-password" placeholder="Nouveau mot de passe (8 caractères min.)" style="margin-bottom:8px"><button class="ghost" id="pwb">Définir mon mot de passe</button> <button class="ghost" id="delb">Supprimer mon compte</button><p class="note" id="pwm"></p></div>
-    <button class="ghost" id="redo">Refaire le questionnaire</button> <button class="ghost" id="rtu">Revoir le tutoriel</button> <button class="ghost" data-legal="1">Confidentialité et mentions légales</button> <button class="ghost" id="pinb">Code secret</button> <button class="ghost" id="outb">Se déconnecter</button> <button class="ghost" id="clear">Effacer mes données</button>
+    <button class="ghost" id="rmd">Rappel avant mes règles</button> <button class="ghost" id="redo">Refaire le questionnaire</button> <button class="ghost" id="rtu">Revoir le tutoriel</button> <button class="ghost" data-legal="1">Confidentialité et mentions légales</button> <button class="ghost" id="pinb">Code secret</button> <button class="ghost" id="outb">Se déconnecter</button> <button class="ghost" id="clear">Effacer mes données</button>
     <p class="note" style="margin-top:10px">Tes données restent sur cet appareil. Les prévisions sont des estimations et ne remplacent ni un avis médical ni une contraception.</p>
   </details>
 </section>
@@ -530,7 +530,7 @@ header::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:no
 var $=function(i){return document.getElementById(i)};
 var S={logged:[],c:28,p:5,v:'ok',name:'',done:false,g:'track',log:{}};
 try{var sv=JSON.parse(localStorage.getItem('cycle-v2')||'null');if(sv&&sv.logged){for(var q in sv)S[q]=sv[q]}}catch(e){}
-function save(){try{localStorage.setItem('cycle-v2',JSON.stringify(S))}catch(e){}if(typeof push==='function')push()}
+function save(){try{localStorage.setItem('cycle-v2',JSON.stringify(S))}catch(e){}if(typeof push==='function')push();if(typeof rmSync==='function')rmSync()}
 function p2(n){return n<10?'0'+n:''+n}
 function key(d){return d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate())}
 function parse(k){var a=k.split('-');return new Date(+a[0],+a[1]-1,+a[2])}
@@ -1021,6 +1021,12 @@ $('onb').addEventListener('click',function(e){
  else return;
  if(A<steps.length-1){A++;step()}else finish();
 });
+var VAPID='BF9Ylb6eLMOIx5YA5A7Th5z4yyUnHkkO6XH4fEcvO20-R4gxe9jUWKi0WtJTcBFCJo-9m4ijq3Mhs-WjkvFqPcY',rt=null;
+function b64d(s){var p='='.repeat((4-s.length%4)%4),b=atob((s+p).replace(/-/g,'+').replace(/_/g,'/')),a=new Uint8Array(b.length);for(var i=0;i<b.length;i++)a[i]=b.charCodeAt(i);return a}
+function nextDate(){var m=model();if(!m.last)return null;var ns=add(m.last,m.c+m.sh+(m.dly||0));while(diff(ns,today)<0)ns=add(ns,m.c);return key(ns)}
+function rmSync(){clearTimeout(rt);rt=setTimeout(function(){if(!sb||!('serviceWorker' in navigator)||!window.PushManager)return;navigator.serviceWorker.getRegistration('/').then(function(r){return r&&r.pushManager.getSubscription()}).then(function(sub){if(!sub)return;return sb.auth.getUser().then(function(x){var u=x.data&&x.data.user;if(!u)return;return sb.from('push_subs').upsert({user_id:u.id,sub:sub.toJSON(),next_date:nextDate()})})}).catch(function(){})},2500)}
+$('rmd').onclick=function(){if(!sb){toast('Connecte-toi pour activer le rappel');return}if(!('serviceWorker' in navigator)||!window.PushManager||!window.Notification){toast('Notifications indisponibles. Sur iPhone, ajoute d’abord Lunéa à l’écran d’accueil.');return}Notification.requestPermission().then(function(p){if(p!=='granted'){toast('Notifications refusées : autorise-les dans les réglages du téléphone');return}return navigator.serviceWorker.register('/sw.js').then(function(){return navigator.serviceWorker.ready}).then(function(r){return r.pushManager.getSubscription().then(function(s){return s||r.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64d(VAPID)})})}).then(function(){rmSync();toast('Rappel activé : tu seras prévenue la veille')})}).catch(function(){toast('Impossible d’activer le rappel')})};
+rmSync();
 $('redo').addEventListener('click',function(){A=0;step()});
 $('rtu').addEventListener('click',function(){tuto(0)});
 /* Aperçu : ouvrir la page avec #demo remplit des données d'exemple (uniquement si rien n'est noté). Bloc supprimable. */
