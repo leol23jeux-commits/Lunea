@@ -5,12 +5,18 @@ self.addEventListener('push', function (e) {
     body: d.body || '',
     icon: '/apple-touch-icon.PNG',
     badge: '/apple-touch-icon.PNG',
-    tag: 'lunea-rappel'
+    tag: 'lunea-rappel',
+    data: { url: d.url || '/' }
   }));
 });
 self.addEventListener('notificationclick', function (e) {
   e.notification.close();
+  var u = (e.notification.data && e.notification.data.url) || '/';
   e.waitUntil(clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (l) {
-    return l.length ? l[0].focus() : clients.openWindow('/');
+    if (l.length) {
+      var c = l[0];
+      return c.focus().then(function () { if (c.navigate) return c.navigate(u); });
+    }
+    return clients.openWindow(u);
   }));
 });
